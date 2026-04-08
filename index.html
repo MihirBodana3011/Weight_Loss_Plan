@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0a0a0a" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FitOS" />
+  <title>FitOS — 90-Day Challenge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;600&family=Oswald:wght@700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="app.css?v=1.1">
+  <link rel="stylesheet" href="desktop.css" media="screen and (min-width: 1024px)">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="./icons/fitos_icon.png">
+  <link rel="apple-touch-icon" href="./icons/fitos_icon.png">
+  <script>
+    // Hard Reset for PWA: Clear all caches and unregister SW one-time
+    const REFRESH_VERSION = 'v12';
+    if (localStorage.getItem('fitos_refresh_ver') !== REFRESH_VERSION) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (let reg of regs) reg.unregister();
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) caches.delete(name);
+        });
+      }
+      localStorage.setItem('fitos_refresh_ver', REFRESH_VERSION);
+      setTimeout(() => location.reload(true), 500);
+    }
+  </script>
+</head>
+
+<body>
+  <div class="scanline"></div>
+  <div class="bg-blobs">
+    <div class="bg-grid"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- ═══ SETUP SCREEN ═══ -->
+  <div id="setup">
+    <div class="setup-box">
+      <div class="setup-logo">FitOs</div>
+      <div class="setup-sub">90-Day Challenge Setup</div>
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input class="form-input" id="s-name" type="text" placeholder="Mihir" autocomplete="off" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Start Weight (kg)</label>
+          <input class="form-input" id="s-weight" type="number" placeholder="85" step="0.1" min="30" max="250" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Weight (kg)</label>
+          <input class="form-input" id="s-target-weight" type="number" placeholder="70" step="0.1" min="30" max="250" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input class="form-input" id="s-age" type="number" placeholder="25" min="10" max="120" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select class="form-input" id="s-gender" style="appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ff6b1a%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 10px auto;">
+            <option value="male">MALE</option>
+            <option value="female">FEMALE</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Height (cm)</label>
+        <input class="form-input" id="s-height" type="number" placeholder="170" min="50" max="250" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Daily Water Goal (glasses)</label>
+        <input class="form-input" id="s-water-goal" type="number" placeholder="10" min="4" max="20" />
+      </div>
+      <button class="setup-btn haptic-press" onclick="setupSave()">🔥 START 90-DAY CHALLENGE</button>
+      <!-- Setup info removed -->
+    </div>
+  </div>
+
+  <!-- ═══ PWA INSTALL PROMPT ═══ -->
+  <div id="pwa-install-banner" class="hidden-start">
+    <div class="pwa-card">
+      <div class="pwa-icon">📲</div>
+      <div class="pwa-info">
+        <div class="pwa-title">INSTALL FITOS</div>
+        <div class="pwa-desc">Get 24/7 reminders & zero-lag workout GIFs</div>
+      </div>
+      <button class="pwa-btn haptic-press" id="btn-pwa-install">INSTALL</button>
+      <div class="pwa-close" onclick="dismissPWA()">✕</div>
+    </div>
+  </div>
+
+  <!-- ═══ APP ═══ -->
+  <div id="app" class="hidden-start">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo">FitOs</div>
+        <div class="topbar-date" id="topbar-date"></div>
+      </div>
+      <div class="day-badge" id="day-badge">DAY —</div>
+    </div>
+
+    <!-- Pages -->
+    <div class="main" id="main-scroll">
+      <div class="page active" id="page-home"></div>
+      <div class="page" id="page-workout"></div>
+      <div class="page" id="page-diet"></div>
+      <div class="page" id="page-water"></div>
+      <div class="page" id="page-progress"></div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-page="home">
+        <div class="nav-icon">🏠</div>
+        <div class="nav-label">Home</div>
+      </button>
+      <button class="nav-btn" data-page="workout">
+        <div class="nav-icon">🏋️</div>
+        <div class="nav-label">Train</div>
+      </button>
+      <button class="nav-btn" data-page="diet">
+        <div class="nav-icon">🍱</div>
+        <div class="nav-label">Diet</div>
+      </button>
+      <button class="nav-btn" data-page="water">
+        <div class="nav-icon">💧</div>
+        <div class="nav-label">Water</div>
+      </button>
+      <button class="nav-btn" data-page="progress">
+        <div class="nav-icon">📈</div>
+        <div class="nav-label">Progress</div>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast"></div>
+  <div id="modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-box" id="modal-box"></div>
+  </div>
+
+  <script src="app.js?v=12" charset="UTF-8"></script>
+</body>
+
+</html>
