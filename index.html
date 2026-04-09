@@ -4,8 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0a0a0a" />
   <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -41,6 +39,17 @@
 </head>
 
 <body>
+  <!-- ═══ SPLASH SCREEN (PREMIUM ADAPTOR) ═══ -->
+  <div id="splash">
+    <div class="splash-content">
+      <div class="splash-title">FitOs</div>
+      <div class="splash-loader">
+        <div class="loader-bar"></div>
+      </div>
+      <div class="splash-status">LOADING NEURAL SYNC...</div>
+    </div>
+  </div>
+
   <div class="scanline"></div>
   <div class="bg-blobs">
     <div class="bg-grid"></div>
@@ -51,45 +60,49 @@
 
   <!-- ═══ SETUP SCREEN ═══ -->
   <div id="setup">
-    <div class="setup-box">
-      <div class="setup-logo">FitOs</div>
-      <div class="setup-sub">90-Day Challenge Setup</div>
+    <div class="setup-box tilt-card">
+      <div class="setup-header">
+        <div class="setup-banner">FitOs</div>
+        <div class="setup-sub">ELITE PERFORMANCE PROTOCOL</div>
+      </div>
+      
+
       <div class="form-group">
-        <label class="form-label">Your Name</label>
-        <input class="form-input" id="s-name" type="text" placeholder="Mihir" autocomplete="off" />
+        <label class="form-label">PILOT NAME</label>
+        <input class="form-input" id="s-name" type="text" placeholder="ENTER NAME..." autocomplete="off" />
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Start Weight (kg)</label>
+          <label class="form-label">CURRENT MASS (KG)</label>
           <input class="form-input" id="s-weight" type="number" placeholder="85" step="0.1" min="30" max="250" />
         </div>
         <div class="form-group">
-          <label class="form-label">Target Weight (kg)</label>
+          <label class="form-label">TARGET MASS (KG)</label>
           <input class="form-input" id="s-target-weight" type="number" placeholder="70" step="0.1" min="30" max="250" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Age</label>
+          <label class="form-label">BIOLOGICAL AGE</label>
           <input class="form-input" id="s-age" type="number" placeholder="25" min="10" max="120" />
         </div>
         <div class="form-group">
-          <label class="form-label">Gender</label>
-          <select class="form-input" id="s-gender" style="appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ff6b1a%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 10px auto;">
+          <label class="form-label">GENDER_ID</label>
+          <select class="form-input custom-select" id="s-gender" aria-label="Gender selection">
             <option value="male">MALE</option>
             <option value="female">FEMALE</option>
           </select>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Height (cm)</label>
+        <label class="form-label">HEIGHT (CM)</label>
         <input class="form-input" id="s-height" type="number" placeholder="170" min="50" max="250" />
       </div>
       <div class="form-group">
-        <label class="form-label">Daily Water Goal (glasses)</label>
+        <label class="form-label">HYDRATION_QUOTA (GLASSES)</label>
         <input class="form-input" id="s-water-goal" type="number" placeholder="10" min="4" max="20" />
       </div>
-      <button class="setup-btn haptic-press" onclick="setupSave()">🔥 START 90-DAY CHALLENGE</button>
+      <button class="setup-btn haptic-press" onclick="setupSave()">⚡ INITIATE PROTOCOL</button>
       <!-- Setup info removed -->
     </div>
   </div>
@@ -112,7 +125,9 @@
     <!-- Topbar -->
     <div class="topbar">
       <div class="topbar-left">
-        <div class="topbar-logo">FitOs</div>
+        <div class="topbar-branding">
+          <div class="topbar-logo">FitOs</div>
+        </div>
         <div class="topbar-date" id="topbar-date"></div>
       </div>
       <div class="day-badge" id="day-badge">DAY —</div>

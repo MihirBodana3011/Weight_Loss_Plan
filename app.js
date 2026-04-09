@@ -24,7 +24,8 @@ function todayDay() {
   return DB.get('todayDay') || DAY_NAMES[new Date().getDay()];
 }
 
-function getDayNum() { return DATA_LOADED ? DB.get('dayNum') || 0 : 0; } function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function getDayNum() { return DATA_LOADED ? DB.get('dayNum') || 0 : 0; } 
+function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
 var DAILY_MOTIVATIONS = [
   "The night isn't for sleeping. It's for grinding. Push harder.",
@@ -188,7 +189,10 @@ var DB = {
     for (var k in w.exercises[exId]) ex[k] = w.exercises[exId][k];
     for (var k in data) ex[k] = data[k];
     w.exercises[exId] = ex;
-    this._updateDay(date, { _rawWorkout: w });
+    // CRITICAL NUCLEAR FIX: Force binary true for workout activity
+    this._updateDay(date, { _rawWorkout: w, workout: true });
+    // Also save a dedicated flag in user preferences as a third backup
+    this._s('last_active_date', date);
   }
 };
 
@@ -508,12 +512,6 @@ function renderHome() {
       ) +
       '</div>' +
       '</div>' +
-  
-      '<div class="motivation-card tilt-card ' + hudClass + '">' +
-      '<div class="mot-icon">⚡</div>' +
-      '<div class="mot-quote">"' + DAILY_MOTIVATIONS[Math.floor(Math.random() * DAILY_MOTIVATIONS.length)] + '"</div>' +
-      '</div>' +
-  
       '<div class="quick-stats">' +
       '<div class="stat-chip tilt-card" onclick="quickWaterAdd()">' +
       '<div class="stat-val" style="color:var(--blue)">' + w + '<span style="font-size:.65rem">/' + (p.waterGoal || 10) + '</span></div>' +
@@ -536,19 +534,17 @@ function renderHome() {
       '<div class="stat-label">🌿 SUPPS</div>' +
       '</div>' +
       '</div>' +
-  
+
       weekStripHTML() +
-      (p ? renderMuscleRecoveryUI(p) : '') +
-  
       '<div class="section">' +
-      '<div class="sec-h"><div class="sec-h-title">⏰ TODAY\'S TIMELINE</div>' + 
-      '<div id="metabolic-status" style="font-size:0.6rem; color:var(--gold); letter-spacing:1.5px; margin-left:auto;">' + getMetabolicPhase() + '</div>' + 
+      '<div class="sec-h"><div class="sec-h-title">⏰ TODAY\'S TIMELINE</div>' +
+      '<div id="metabolic-status" style="font-size:0.6rem; color:var(--gold); letter-spacing:1.5px; margin-left:auto;">' + getMetabolicPhase() + '</div>' +
       '</div>' +
       scheduleHTML() +
       '</div>';
   } catch (err) {
     console.error("[FitOS] renderHome Error:", err);
-    document.getElementById('page-home').innerHTML = '<div style="padding:40px;text-align:center;color:var(--fire);font-weight:700;">⚠ LOADING ERROR<br><div style="font-size:.7rem;font-weight:400;color:var(--sub);margin-top:10px;">Please hard refresh (Ctrl+F5) to fix cache. Details: '+err.message+'</div></div>';
+    document.getElementById('page-home').innerHTML = '<div style="padding:40px;text-align:center;color:var(--fire);font-weight:700;">⚠ LOADING ERROR<br><div style="font-size:.7rem;font-weight:400;color:var(--sub);margin-top:10px;">Please hard refresh (Ctrl+F5) to fix cache. Details: ' + err.message + '</div></div>';
   }
 }
 
@@ -658,15 +654,28 @@ function getMetabolicAdaptabilityScore() {
 
   var meals = DB.getMeal(d);
   var mealsDone = 0;
-  ['pregym', 'lunch', 'dinner'].forEach(function(m){ if(meals[m] === true) mealsDone++; });
-  var mealScore = (mealsDone / 3) * 100;
+  // Account for actual meals only
+  var targetMeals = ['pregym', 'lunch', 'dinner'];
+  targetMeals.forEach(function (m) { if (meals[m] === true) mealsDone++; });
+  var mealScore = (mealsDone / targetMeals.length) * 100;
 
   var workout = DB.getWorkout(d);
-  var workoutScore = workout.completed ? 100 : 0;
-  if (todayWorkoutType() === 'rest') workoutScore = 100;
+  var workoutScore = 0;
+  var wType = todayWorkoutType();
+  if (wType === 'rest') {
+    workoutScore = 100;
+  } else {
+    // Check if workout is completed or at least partially done
+    if (workout.completed) {
+      workoutScore = 100;
+    } else {
+      var prog = getTodayWorkoutProgress();
+      if (prog.total > 0) workoutScore = (prog.done / prog.total) * 100;
+    }
+  }
 
   var mas = Math.round((waterScore * 0.3) + (mealScore * 0.4) + (workoutScore * 0.3));
-  return mas;
+  return Math.min(Math.max(mas, 0), 100);
 }
 
 function getCyberDiagnostics() {
@@ -699,50 +708,7 @@ function getCyberDiagnostics() {
 }
 
 
-function renderMuscleRecoveryUI() {
-  var data = DB._getData();
-  var muscleStats = {
-    'CHEST/TRICEPS': { last: 0, status: 'READY' },
-    'BACK/BICEPS': { last: 0, status: 'READY' },
-    'LEGS/SHOULDERS': { last: 0, status: 'READY' }
-  };
-  
-  var now = new Date();
-  for(var i=0; i<7; i++) {
-    var d = new Date(); d.setDate(now.getDate() - i);
-    var dStr = toLocalDate(d);
-    var entry = data[dStr];
-    if (entry && entry.workout && entry.workout.completed) {
-       var type = entry._rawWorkout ? entry._rawWorkout.type : null;
-       var label = '';
-       if (type === 'push') label = 'CHEST/TRICEPS';
-       else if (type === 'pull') label = 'BACK/BICEPS';
-       else if (type === 'power') label = 'LEGS/SHOULDERS';
-       
-       if (label && muscleStats[label].last === 0) {
-         muscleStats[label].last = i;
-         if (i === 0) muscleStats[label].status = 'EXHAUSTED';
-         else if (i < 2) muscleStats[label].status = 'RECOVERING';
-       }
-    }
-  }
 
-  var html = '<div class="section" style="margin-top:10px;">' +
-    '<div class="sec-h"><div class="sec-h-title">🧬 MUSCLE RECOVERY (AI)</div></div>' +
-    '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">';
-  
-  Object.keys(muscleStats).forEach(function(k) {
-    var s = muscleStats[k];
-    var color = s.status === 'READY' ? 'var(--green)' : (s.status === 'RECOVERING' ? 'var(--gold)' : 'var(--red)');
-    html += '<div class="tilt-card" style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; text-align:center;">' +
-      '<div style="font-size:0.55rem; color:var(--sub); letter-spacing:1px; margin-bottom:4px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">' + k + '</div>' +
-      '<div style="font-size:0.65rem; color:' + color + '; font-weight:900;">' + s.status + '</div>' +
-      '</div>';
-  });
-  
-  html += '</div></div>';
-  return html;
-}
 
 function toggleItemStatus(id) {
   var d = today();
@@ -968,9 +934,8 @@ function renderWorkoutDay(dStr, wo, wkData, isDone) {
 
           setsHtml += '<div class="set-row">' +
             '<div class="set-check' + (isSetDone ? ' done' : '') + '" id="chk-' + ex.id + '-' + s + '" onclick="event.stopPropagation();toggleSetDone(\'' + dStr + '\',\'' + ex.id + '\',' + s + ')">✓</div>' +
-            '<div class="set-num">Set ' + s + '</div>' +
-            '<div class="set-reps">' + (ex.reps ? ex.reps + ' reps' : ex.time) + '</div>' +
-            (showWeight ? '<input class="set-weight-input" type="number" placeholder="kg" value="' + sw + '" onchange="saveSetWeight(\'' + dStr + '\',\'' + ex.id + '\',' + s + ',this.value)" onclick="event.stopPropagation()"/>' : '<div style="width:70px;"></div>') +
+            '<div class="set-num">SET ' + s + '</div>' +
+            '<div class="set-reps">' + (ex.reps ? ex.reps + ' REPS' : ex.time) + '</div>' +
             '</div>';
         }
       }
@@ -1295,12 +1260,19 @@ function renderWater() {
     glassesHtml += '<div class="glass-item tilt-card' + filled + '" onclick="DB.setWater(\'' + t + '\',' + i + '); renderWater();"><div style="font-size:1.4rem;">' + icon + '</div><div class="glass-lbl">' + i + '</div></div>';
   }
 
-  var dataList = DB._getData().slice(-7);
-  var chartHtml = dataList.map(function (d) {
-    var c = d.water || 0;
+  var chartData = [];
+  var now = new Date();
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(now);
+    d.setDate(now.getDate() - i);
+    var iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    chartData.push({ date: iso, dayIdx: d.getDay() });
+  }
+
+  var chartHtml = chartData.map(function (item) {
+    var c = DB.getWater(item.date);
     var p = Math.min((c / goal) * 100, 100) || 0;
-    var dt = new Date(d.date + 'T00:00:00');
-    var lbl = isNaN(dt.getTime()) ? '' : DAY_SHORT[dt.getDay()];
+    var lbl = DAY_SHORT[item.dayIdx];
     var filled = c >= goal ? ' filled' : '';
     return '<div class="chart-bar-wrap"><div class="chart-bar-val">' + c + '</div><div class="chart-bar' + filled + '" style="height:' + Math.max(p, 5) + '%;"></div><div class="chart-bar-lbl">' + lbl + '</div></div>';
   }).join('');
@@ -1331,50 +1303,79 @@ function renderWater() {
 // ═══════════════════════════════════════════════
 
 function generateWeightChartSVG(pts) {
-  if (!pts || !pts.length) return '<div class="empty-chart">Log weights to see trend...</div>';
+  if (!pts || !pts.length) return '<div class="empty-chart" style="padding:40px; text-align:center; color:var(--sub); font-size:0.85rem; font-weight:600;">📊 Log weights to see trend...</div>';
 
-  var w = 320, h = 180, pad = 24;
+  var w = 340, h = 260, pad = 35, barGap = 4;
   var wts = pts.map(function (p) { return p.kg; });
   var minW = Math.min.apply(null, wts) - 2;
   var maxW = Math.max.apply(null, wts) + 2;
   if (maxW === minW) { minW -= 5; maxW += 5; }
 
-  var getX = function (i) { return pad + (i * (w - 2 * pad) / (pts.length > 1 ? pts.length - 1 : 1)); };
+  var barWidth = Math.max(8, (w - 2 * pad - (pts.length - 1) * barGap) / pts.length);
+  var getX = function (i) { return pad + (i * (barWidth + barGap)); };
   var getY = function (v) { return h - pad - ((v - minW) * (h - 2 * pad) / (maxW - minW)); };
 
+  // Grid lines with labels
   var gridHtml = '';
   var step = (maxW - minW) > 10 ? 5 : 2;
   for (var v = Math.ceil(minW / step) * step; v <= maxW; v += step) {
     var gy = getY(v);
-    gridHtml += '<line x1="' + pad + '" y1="' + gy + '" x2="' + (w - pad) + '" y2="' + gy + '" stroke="var(--border2)" stroke-width="0.5" stroke-dasharray="3,3" />';
-    gridHtml += '<text x="4" y="' + (gy + 3) + '" fill="var(--sub2)" style="font-size:7px;">' + v + '</text>';
+    gridHtml += '<line x1="' + pad + '" y1="' + gy + '" x2="' + (w - 10) + '" y2="' + gy + '" stroke="rgba(255,255,255,0.06)" stroke-width="1.5" />';
+    gridHtml += '<text x="12" y="' + (gy + 4) + '" fill="var(--sub)" style="font-size:10px; font-weight:700;">' + v + '</text>';
   }
 
-  var pathD = 'M ' + getX(0) + ' ' + getY(pts[0].kg);
-  var pointsHtml = '';
+  var barsHtml = '';
+  var avgWeight = wts.reduce(function(a, b) { return a + b; }) / wts.length;
 
   for (var i = 0; i < pts.length; i++) {
-    var x = getX(i), y = getY(pts[i].kg);
-    if (i > 0) {
-      var prevX = getX(i - 1), prevY = getY(pts[i - 1].kg);
-      var cp1x = prevX + (x - prevX) / 2;
-      pathD += ' C ' + cp1x + ' ' + prevY + ' ' + cp1x + ' ' + y + ' ' + x + ' ' + y;
+    var x = getX(i);
+    var y = getY(pts[i].kg);
+    var barHeight = getY(minW) - y;
+
+    // Color based on comparison
+    var isAboveAvg = pts[i].kg > avgWeight;
+    var barColor = isAboveAvg ? 'var(--red)' : 'var(--green)';
+    var lightColor = isAboveAvg ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)';
+
+    // Bar with gradient
+    var barId = 'bar-' + i;
+    barsHtml += '<defs><linearGradient id="grad' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + barColor + '" stop-opacity="0.9"/><stop offset="100%" stop-color="' + barColor + '" stop-opacity="0.6"/></linearGradient></defs>';
+    
+    // Main bar with shadow
+    barsHtml += '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + barHeight + '" fill="url(#grad' + i + ')" rx="3" ry="3" opacity="0.85" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.4))" />';
+    
+    // Highlight bar on hover effect
+    barsHtml += '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + barHeight + '" fill="' + lightColor + '" rx="3" ry="3" opacity="0" class="bar-hover" style="transition:opacity 0.2s;" />';
+
+    // Value label on top
+    var showLabel = (i === 0) || (i === pts.length - 1) || (pts.length > 20 && i % Math.floor(pts.length / 5) === 0) || (pts.length <= 10);
+    if (showLabel) {
+      barsHtml += '<text x="' + (x + barWidth / 2) + '" y="' + (y - 8) + '" fill="' + barColor + '" text-anchor="middle" style="font-size:11px;font-weight:bold;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));">' + pts[i].kg + '</text>';
     }
-    pointsHtml += '<circle cx="' + x + '" cy="' + y + '" r="3.5" fill="var(--fire)" stroke="#fff" stroke-width="1.5" />';
-    if (i === pts.length - 1 || i === 0 || pts.length < 7) {
-      pointsHtml += '<text x="' + x + '" y="' + (y - 10) + '" fill="#fff" text-anchor="middle" style="font-size:9px;font-weight:bold;filter:drop-shadow(0 1px 2px #000);">' + pts[i].kg + '</text>';
+
+    // Date label on bottom (for first, last, and every nth)
+    if (i === 0 || i === pts.length - 1 || (pts.length > 20 && i % Math.floor(pts.length / 4) === 0)) {
+      var dateStr = pts[i].date.substring(5); // MM-DD format
+      barsHtml += '<text x="' + (x + barWidth / 2) + '" y="' + (h - 5) + '" fill="var(--sub)" text-anchor="middle" style="font-size:8px;">' + dateStr + '</text>';
     }
   }
 
-  var fillD = pathD + ' L ' + getX(pts.length - 1) + ' ' + (h - pad) + ' L ' + getX(0) + ' ' + (h - pad) + ' Z';
+  // Axis lines
+  var axisHtml = '<line x1="' + pad + '" y1="' + (h - pad) + '" x2="' + (w - 10) + '" y2="' + (h - pad) + '" stroke="var(--border)" stroke-width="1.5" />' +
+    '<line x1="' + pad + '" y1="' + pad + '" x2="' + pad + '" y2="' + (h - pad) + '" stroke="var(--border)" stroke-width="1.5" />';
 
-  return '<svg id="weight-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="overflow:visible;">' +
-    '<defs><linearGradient id="gradW" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--fire)" stop-opacity="0.4"/><stop offset="100%" stop-color="var(--fire)" stop-opacity="0"/></linearGradient></defs>' +
+  // Average line
+  var avgY = getY(avgWeight);
+  barsHtml += '<line x1="' + pad + '" y1="' + avgY + '" x2="' + (w - 10) + '" y2="' + avgY + '" stroke="var(--gold)" stroke-width="2" stroke-dasharray="5,5" opacity="0.6" />' +
+    '<text x="' + (w - 8) + '" y="' + (avgY - 5) + '" fill="var(--gold)" text-anchor="end" style="font-size:9px;font-weight:bold;">AVG</text>';
+
+  var svg = '<svg id="weight-svg" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="overflow:visible; width:100%; height:100%;">' +
     gridHtml +
-    '<path d="' + fillD + '" fill="url(#gradW)" />' +
-    '<path class="weight-svg-path" d="' + pathD + '" fill="none" stroke="var(--fire)" stroke-width="3" stroke-linecap="round" />' +
-    pointsHtml +
+    axisHtml +
+    barsHtml +
     '</svg>';
+
+  return svg;
 }
 
 function renderProgress() {
@@ -1423,19 +1424,24 @@ function renderProgress() {
     '<div class="prog-stat" onclick="editWeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (lastWtObj ? lastWtObj.kg : '--') + '</div><div class="prog-stat-lbl">CURRENT (KG)</div></div>' +
     '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--blue);">' + (targetWt || '--') + '</div><div class="prog-stat-lbl">TARGET (KG)</div></div>' +
     '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--red);">' + needsToLose + '</div><div class="prog-stat-lbl">NEEDS TO LOSE</div></div>' +
-    
+
     // Row 2: Profile focus
     '<div class="prog-stat haptic-press" onclick="editHeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--green);">' + (prof.height || '--') + '</div><div class="prog-stat-lbl">HEIGHT (CM)</div></div>' +
     '<div class="prog-stat haptic-press" onclick="editGender()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--purple); text-transform:uppercase; font-size:1.4rem;">' + (prof.gender || '--') + '</div><div class="prog-stat-lbl">GENDER</div></div>' +
     '<div class="prog-stat haptic-press" onclick="editAge()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (prof.age || '--') + '</div><div class="prog-stat-lbl">AGE</div></div>' +
     '</div>' +
 
-    '<div id="ai-insights-container"></div>' +
     '<div class="metrics-grid" id="adv-metrics"></div>' +
+
+    '<div id="ai-insights-container"></div>' +
+
     '<div id="bio-hud-container" style="margin:20px 0;"></div>' +
-    '<div class="weight-chart">' +
-    '<div class="weight-chart-title">📊 WEIGHT TREND <button onclick="DB.exportData()" style="float:right;background:var(--bg3);border:1px solid var(--border2);color:var(--sub);font-size:.55rem;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:\'Bebas Neue\',sans-serif;letter-spacing:1px;margin-top:-2px;">EXPORT JSON</button></div>' +
+
+    '<div class="weight-chart" style="margin:20px 16px; padding:18px 16px; background:linear-gradient(135deg, rgba(255,107,26,0.08), rgba(88,198,255,0.05)); border:1px solid rgba(255,107,26,0.2); border-radius:18px; backdrop-filter:blur(10px);">' +
+    '<div class="weight-chart-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:0.9rem; font-weight:900; letter-spacing:1px; color:var(--gold);">📊 WEIGHT TREND <button onclick="DB.exportData()" style="background:rgba(255,107,26,0.2); border:1px solid rgba(255,107,26,0.3); color:var(--gold); font-size:.65rem; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:\'Bebas Neue\',sans-serif; letter-spacing:1px; font-weight:700; transition:all 0.3s; hover:background:rgba(255,107,26,0.3);">⬇️ EXPORT JSON</button></div>' +
+    '<div style="position:relative; height:280px;">' +
     generateWeightChartSVG(chartWeights) +
+    '</div>' +
     '</div>';
 
   setTimeout(function () {
@@ -1445,19 +1451,19 @@ function renderProgress() {
     var gender = prof.gender || 'male';
     var wtList = DB.weights();
     var curW = wtList.length ? wtList[wtList.length - 1].kg : 0;
-    
+
     // Fetch today's behavioral context for AI
     var todayDate = today();
     var waterTaken = DB.getWater(todayDate);
     var waterGoal = prof.waterGoal || 10;
     var rawMeals = DB.getMeal(todayDate);
     var workoutData = DB.getWorkout(todayDate);
-    
+
     // 1. Process today's meal completion
     var mealIds = ['pregym', 'lunch', 'dinner'];
     var mealsDone = 0;
     var mealsSkipped = 0;
-    mealIds.forEach(function(mid) {
+    mealIds.forEach(function (mid) {
       if (rawMeals[mid] === true) mealsDone++;
       if (rawMeals[mid] === 'skipped') mealsSkipped++;
     });
@@ -1467,7 +1473,7 @@ function renderProgress() {
     if (wtList.length >= 2) {
       var latest = wtList[wtList.length - 1].kg;
       // Look back 7 entries or to start if less than 7
-      var lookbackIdx = Math.max(0, wtList.length - 8); 
+      var lookbackIdx = Math.max(0, wtList.length - 8);
       var prev = wtList[lookbackIdx].kg;
       trendDelta = latest - prev;
     }
@@ -1476,15 +1482,15 @@ function renderProgress() {
     var avgWater3d = 0;
     var avgDiet3d = 0;
     var daysToAvg = 3;
-    for(var dIdx = 0; dIdx < daysToAvg; dIdx++) {
+    for (var dIdx = 0; dIdx < daysToAvg; dIdx++) {
       var pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - dIdx);
       var dStr = toLocalDate(pastDate);
       avgWater3d += DB.getWater(dStr);
-      
+
       var pMeals = DB.getMeal(dStr);
       var pDone = 0;
-      mealIds.forEach(function(mid) { if(pMeals[mid]===true) pDone++; });
+      mealIds.forEach(function (mid) { if (pMeals[mid] === true) pDone++; });
       avgDiet3d += (pDone / mealIds.length);
     }
     avgWater3d /= daysToAvg;
@@ -1518,8 +1524,8 @@ function renderProgress() {
     var mas = getMetabolicAdaptabilityScore();
     var masColor = mas >= 90 ? 'var(--green)' : mas >= 70 ? 'var(--gold)' : 'var(--red)';
     var diagLogs = getCyberDiagnostics();
-    
-    var hudHtml = 
+
+    var hudHtml =
       '<div class="tilt-card" style="margin:0 16px 16px; padding:16px; background:var(--card); border:1px solid var(--border2); border-radius:18px; display:flex; align-items:center; gap:16px; box-shadow:var(--shadow-3d);">' +
       '<div class="mas-circle" style="width:60px; height:60px; border-width:3px; border-color:' + masColor + '; box-shadow: 0 0 15px ' + masColor + '44; flex-shrink:0;">' +
       '<div class="mas-val" style="font-size:1.4rem;">' + mas + '</div>' +
@@ -1529,15 +1535,10 @@ function renderProgress() {
       '<div style="font-size:0.6rem; color:var(--sub); margin-top:2px;">SYS_STATUS: <span style="color:' + masColor + ';">' + (mas >= 90 ? 'ELITE_OPTIMIZED' : 'SUB_OPTIMAL') + '</span></div>' +
       '<div style="font-size:0.55rem; color:var(--sub2); margin-top:4px;">Biological adherence tracking active.</div>' +
       '</div>' +
-      '</div>' +
-      
-      '<div class="terminal-box" style="border-color:var(--border2); margin-top: -4px;">' +
-      '<div class="terminal-header">DIAGNOSTIC_CONSOLE v4.0.2</div>' +
-      diagLogs.map(function(l){ return '<div class="terminal-line">> ' + l + '</div>'; }).join('') +
-      '<div class="terminal-line">> AWAITING INPUT...<span class="terminal-cursor"></span></div>' +
       '</div>';
-    
-    document.getElementById('bio-hud-container').innerHTML = hudHtml;
+
+    var container = document.getElementById('bio-hud-container');
+    if (container) container.innerHTML = hudHtml;
 
     if (h > 0 && curW > 0) renderHealthMetrics(h, curW, age, gender, dailyContext, projectedDateHtml);
 
@@ -1630,7 +1631,7 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
 
   if (!h_m || !w) return;
   var bmi = w / (h_m * h_m);
-  
+
   // (Calculation logic remains the same...)
   // ... [omitted for brevity in replacement chunk but preserved in file] ...
 
@@ -1645,11 +1646,11 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
 
   // Advanced Calculations
   var gFactor = (gender === 'male' ? 1 : 0);
-  
+
   // 1. Body Fat Ratio (Deurenberg Formula)
   var bfr = (1.20 * bmi) + (0.23 * age) - (10.8 * gFactor) - 5.4;
   if (age < 18) {
-     bfr = (1.51 * bmi) - (0.70 * age) - (3.6 * gFactor) + 1.4;
+    bfr = (1.51 * bmi) - (0.70 * age) - (3.6 * gFactor) + 1.4;
   }
   bfr = Math.max(3, Math.min(50, bfr));
 
@@ -1670,7 +1671,7 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
   var tbwPct = (tbw / w) * 100;
 
   // 5. Protein Mass
-  var lbm = w * (1 - (bfr/100));
+  var lbm = w * (1 - (bfr / 100));
   var protein = lbm * 0.21;
 
   // 6. Mineral
@@ -1712,17 +1713,17 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
   var obesityStatus = obesityDegree < 10 ? 'NORMAL' : (obesityDegree < 20 ? 'OVER' : 'OBESE');
 
   // Generate Insights
-  var insights = generateAIInsights({ 
-    bmi: bmi, bfr: bfr, tbwPct: tbwPct, viscIdx: viscIdx, 
-    protein: protein, gender: gender, age: age, weight: w, 
+  var insights = generateAIInsights({
+    bmi: bmi, bfr: bfr, tbwPct: tbwPct, viscIdx: viscIdx,
+    protein: protein, gender: gender, age: age, weight: w,
     bmr: bmr, lbm: lbm, muscleMass: muscleMass,
     context: context || {}
   });
-  
+
   var insightsHtml = '<div class="insight-card">' +
-    '<div class="ins-header"><div class="ins-tag">BETA</div><div class="ins-title">✨ PREMIUM AI INSIGHTS</div></div>' +
+    '<div class="ins-header"><div class="ins-title">✨ PREMIUM AI INSIGHTS</div></div>' +
     '<div class="ins-list">' +
-    insights.map(function(ins) {
+    insights.map(function (ins) {
       return '<div class="ins-item">' +
         '<div class="ins-icon">' + ins.icon + '</div>' +
         '<div class="ins-content">' +
@@ -1735,107 +1736,374 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
     '</div>';
 
   // Render Grid (4 Sets of 4)
-  var metricsHtml = 
+  var metricsHtml =
     // Set 1: Basics
     createMetricCard('🔢', bmi.toFixed(1), 'BMI', 'Body Mass Index', 'm-blue', 0, bmiStatus) +
     createMetricCard('⚖️', idealWeight.toFixed(1), 'KG', 'Ideal Weight', 'm-blue', 1, 'TARGET') +
     createMetricCard('📈', (obesityDegree > 0 ? '+' : '') + obesityDegree.toFixed(1), '%', 'Obesity Degree', 'm-red', 2, obesityStatus) +
     createMetricCard('🎂', bodyAge, 'YRS', 'Biological Age', 'm-purple', 3, 'BODY AGE') +
-    
+
     // Set 2: Fat
     createMetricCard('🔥', bfr.toFixed(1), '%', 'Body Fat Ratio', 'm-red', 4, bfrStatus) +
     createMetricCard('🍔', fatMass.toFixed(1), 'KG', 'Fat Mass', 'm-red', 5, 'TOTAL FAT') +
     createMetricCard('⚠️', viscIdx, 'IDX', 'Visceral Fat', 'm-red', 6, viscStatus) +
     createMetricCard('🧬', subFat.toFixed(1), '%', 'Subcutaneous Fat', 'm-gold', 7, 'NORMAL') +
-    
+
     // Set 3: Build
     createMetricCard('💪', muscleMass.toFixed(1), 'KG', 'Muscle Mass', 'm-green', 8, 'STRENGTH') +
     createMetricCard('⚡', muscleRate.toFixed(1), '%', 'Muscle Rate', 'm-green', 9, 'RATIO') +
     createMetricCard('🥩', protein.toFixed(1), 'KG', 'Protein Mass', 'm-green', 10, 'QUALITY') +
     createMetricCard('🦾', lbm.toFixed(1), 'KG', 'Lean Body Mass', 'm-purple', 11, 'LBM') +
-    
+
     // Set 4: Metabolism & Foundation
     createMetricCard('🔋', Math.round(bmr), 'KCAL', 'Basal Metabolism', 'm-gold', 12, 'BMR') +
     createMetricCard('🔥', Math.round(tdee), 'KCAL', 'Total Energy', 'm-gold', 13, 'TDEE') +
     createMetricCard('💧', tbw.toFixed(1), 'L', 'Body Water', 'm-blue', 14, tbwStatus) +
     createMetricCard('🦴', mineral.toFixed(1), 'KG', 'Mineral Mass', 'm-purple', 15, 'BALANCED');
 
-  document.getElementById('ai-insights-container').innerHTML = (projectionHtml || '') + insightsHtml;
+  // Render advanced insights with cycle analysis and predictive analytics
+  var cycleAnalysisHtml = generateCycleAnalysisHtml();
+  var advancedMetricsHtml = generateAdvancedMetricsHtml();
+  var predictiveHtml = generatePredictiveInsights();
+  
+  document.getElementById('ai-insights-container').innerHTML = 
+    (projectionHtml || '') + 
+    insightsHtml + 
+    cycleAnalysisHtml + 
+    advancedMetricsHtml + 
+    predictiveHtml;
   document.getElementById('adv-metrics').innerHTML = metricsHtml;
+}
+
+// ═══════════════════════════════════════════════
+// ADVANCED AI INSIGHTS ENGINE v3.0
+// ═══════════════════════════════════════════════
+
+function getCycleData(days) {
+  var data = [];
+  for (var i = days - 1; i >= 0; i--) {
+    var d = new Date();
+    d.setDate(d.getDate() - i);
+    var dStr = toLocalDate(d);
+    var entry = DB._getDayEntry(dStr);
+    var water = entry.water || 0;
+    var meals = entry._rawDiet || {};
+    var workout = entry._rawWorkout || {};
+    var mealCount = 0;
+    ['pregym', 'lunch', 'dinner'].forEach(function (m) { if (meals[m] === true) mealCount++; });
+    data.push({
+      date: dStr,
+      water: water,
+      meals: mealCount,
+      workout: workout.completed || false,
+      weight: entry.weight || 0
+    });
+  }
+  return data;
+}
+
+function calculateAdvancedMetrics(days) {
+  var cycle = getCycleData(days);
+  var weights = DB.weights().slice(-days);
+  var profile = DB.profile();
+  
+  var metrics = {
+    // Water metrics
+    waterTotal: 0,
+    waterDays: 0,
+    waterOptimal: 0,
+    waterGoal: profile.waterGoal || 10,
+    
+    // Diet metrics
+    mealTotal: 0,
+    mealDays: 0,
+    mealAdherence: 0,
+    
+    // Workout metrics
+    workoutDays: 0,
+    workoutAdherence: 0,
+    
+    // Weight metrics
+    weightStart: 0,
+    weightEnd: 0,
+    weightTrend: 0,
+    weightDelta: 0,
+    
+    // Calculated
+    consistencyScore: 0,
+    disciplineRating: ''
+  };
+  
+  cycle.forEach(function (day) {
+    metrics.waterTotal += day.water;
+    if (day.water > 0) metrics.waterDays++;
+    if (day.water >= metrics.waterGoal) metrics.waterOptimal++;
+    metrics.mealTotal += day.meals;
+    if (day.meals > 0) metrics.mealDays++;
+    if (day.workout) metrics.workoutDays++;
+    if (day.weight > 0) {
+      if (!metrics.weightStart) metrics.weightStart = day.weight;
+      metrics.weightEnd = day.weight;
+    }
+  });
+  
+  metrics.waterAvg = (metrics.waterTotal / cycle.length).toFixed(1);
+  metrics.mealAvg = (metrics.mealTotal / cycle.length).toFixed(1);
+  metrics.mealAdherence = Math.round((metrics.mealDays / cycle.length) * 100);
+  metrics.workoutAdherence = Math.round((metrics.workoutDays / cycle.length) * 100);
+  
+  if (metrics.weightStart && metrics.weightEnd) {
+    metrics.weightDelta = (metrics.weightEnd - metrics.weightStart).toFixed(1);
+    metrics.weightTrend = (metrics.weightDelta / days * 7).toFixed(2); // Weekly trend
+  }
+  
+  var dScore = (metrics.mealAdherence * 0.35) + (metrics.workoutAdherence * 0.35) + ((metrics.waterDays / cycle.length) * 100 * 0.3);
+  metrics.consistencyScore = Math.round(dScore);
+  
+  if (metrics.consistencyScore >= 95) metrics.disciplineRating = 'ELITE';
+  else if (metrics.consistencyScore >= 85) metrics.disciplineRating = 'EXCELLENT';
+  else if (metrics.consistencyScore >= 75) metrics.disciplineRating = 'GOOD';
+  else if (metrics.consistencyScore >= 50) metrics.disciplineRating = 'MODERATE';
+  else metrics.disciplineRating = 'REQUIRES FOCUS';
+  
+  return metrics;
+}
+
+function detectPatterns() {
+  var week7 = calculateAdvancedMetrics(7);
+  var week14 = calculateAdvancedMetrics(14);
+  
+  var patterns = {
+    waterTrend: '',
+    mealTrend: '',
+    workoutTrend: '',
+    bestDay: '',
+    weakPoint: '',
+    consistency: ''
+  };
+  
+  // Water trend detection
+  if (week7.waterAvg > week7.waterGoal * 0.8) {
+    patterns.waterTrend = 'CONSISTENT HYDRATION';
+  } else if (week7.waterAvg > week7.waterGoal * 0.6) {
+    patterns.waterTrend = 'MODERATE HYDRATION';
+  } else {
+    patterns.waterTrend = 'DEHYDRATION PATTERN';
+  }
+  
+  // Meal adherence trend
+  if (week7.mealAdherence >= 85) {
+    patterns.mealTrend = 'DISCIPLINED DIET';
+  } else if (week7.mealAdherence >= 70) {
+    patterns.mealTrend = 'VARIABLE MEALS';
+  } else {
+    patterns.mealTrend = 'INCONSISTENT DIET';
+  }
+  
+  // Workout pattern
+  if (week7.workoutAdherence >= 85) {
+    patterns.workoutTrend = 'COMMITTED TRAINING';
+  } else if (week7.workoutAdherence >= 60) {
+    patterns.workoutTrend = 'SPORADIC TRAINING';
+  } else {
+    patterns.workoutTrend = 'SKIPPED WORKOUTS';
+  }
+  
+  // Identify weak point
+  var scores = {
+    'Water': week7.waterDays / 7 * 100,
+    'Diet': week7.mealAdherence,
+    'Workouts': week7.workoutAdherence
+  };
+  patterns.weakPoint = Object.keys(scores).reduce(function(a, b) { return scores[a] < scores[b] ? a : b; });
+  
+  // Consistency over 14 days
+  if (week7.consistencyScore === week14.consistencyScore) {
+    patterns.consistency = 'STABLE PERFORMANCE';
+  } else if (week7.consistencyScore > week14.consistencyScore) {
+    patterns.consistency = 'IMPROVING TREND';
+  } else {
+    patterns.consistency = 'DECLINING TREND';
+  }
+  
+  return patterns;
 }
 
 function generateAIInsights(m) {
   var ins = [];
   var ctx = m.context || {};
   
-  // --- 1. PERFORMANCE SCORE (CONSISTENCY %) ---
-  var score = 0;
-  if (ctx.water) score += (Math.min(1, ctx.water.taken / ctx.water.goal) * 33.3);
-  if (ctx.diet) score += ((ctx.diet.done / ctx.diet.total) * 33.3);
-  if (ctx.workout && ctx.workout.done) score += 33.3;
+  // Load cycle data for analysis
+  var week7 = calculateAdvancedMetrics(7);
+  var week14 = calculateAdvancedMetrics(14);
+  var patterns = detectPatterns();
+  var profile = DB.profile();
+  var weights = DB.weights();
   
-  if (score > 10) {
-    ins.push({ 
-      icon: score > 90 ? '💠' : '📈', 
-      msg: 'DAILY PERFORMANCE: ' + Math.round(score) + '%', 
-      action: score > 90 ? 'Masterful adherence. Your consistency is in the elite 1%. Momentum is your greatest asset now.' : 'Solid progress. Closing the ' + Math.round(100 - score) + '% gap will exponentially increase your metabolic efficiency.' 
+  // ═══ ADVANCED WEIGHT TRACKING ANALYSIS ═══
+  var weightAnalysis = {
+    currentWeight: m.weight,
+    targetWeight: profile.targetWeight,
+    startWeight: profile.startWeight,
+    remaining: m.weight - profile.targetWeight,
+    weeklyDelta: week7.weightTrend,
+    bodyFat: m.bfr,
+    muscleMass: m.muscleMass,
+    fatMass: m.weight * (m.bfr / 100),
+    bodyAge: m.bodyAge,
+    chronoAge: m.age,
+    bmi: m.bmi,
+    viscIdx: m.viscIdx,
+    tbwPct: m.tbwPct
+  };
+  
+  // ═══ TIER 1: CRITICAL HEALTH ALERTS ═══
+  if (weightAnalysis.bmi >= 35) {
+    ins.push({
+      icon: '🚨',
+      msg: 'OBESITY CRITICAL LEVEL',
+      action: 'BMI: ' + weightAnalysis.bmi.toFixed(1) + ' (OBESE). Health at immediate risk. Weight: ' + weightAnalysis.currentWeight.toFixed(1) + 'kg → Target: ' + weightAnalysis.targetWeight + 'kg. Lose ' + Math.ceil(weightAnalysis.remaining) + 'kg = reduce mortality risk by 40-50%.'
+    });
+  } else if (weightAnalysis.viscIdx >= 15) {
+    ins.push({
+      icon: '⚠️',
+      msg: 'VISCERAL FAT CRITICAL',
+      action: 'Visceral Index: ' + weightAnalysis.viscIdx + ' (CRITICAL). Organ fat detected. Action: Eliminate refined carbs, increase fiber, add HIIT. This fat responds fastest to lifestyle.'
     });
   }
-
-  // --- 2. URGENT: HYDRATION & METABOLISM ---
-  if (ctx.water) {
-    var waterPct = (ctx.water.taken / ctx.water.goal) * 100;
-    if (waterPct < 40) {
-      ins.push({ icon: '🚨', msg: 'METABOLIC EMERGENCY', action: 'Critical dehydration detected (' + ctx.water.taken + ' glasses). Without H2O, fat oxidation and protein synthesis are stalled. Drink 500ml NOW.' });
-    }
+  
+  // ═══ TIER 2: BODY COMPOSITION ANALYSIS ═══
+  if (weightAnalysis.weeklyDelta < -1.5) {
+    ins.push({
+      icon: '⚡',
+      msg: 'RAPID WEIGHT LOSS: ' + Math.abs(weightAnalysis.weeklyDelta).toFixed(2) + 'kg/week',
+      action: 'Loss speed: ' + Math.abs(weightAnalysis.weeklyDelta).toFixed(2) + 'kg/week = UNSAFE. Risk: Muscle loss (current: ' + weightAnalysis.muscleMass.toFixed(1) + 'kg). Protein: ' + (weightAnalysis.currentWeight * 2.5).toFixed(0) + 'g/day. Slow pace preserves muscle.'
+    });
   }
-
-  // --- 3. TREND DIAGNOSTICS & PLATEAU BREAKING (AI 2.0/3.0) ---
-  if (ctx.trend && ctx.trend.hasData) {
-    var delta = ctx.trend.delta7d;
-    var isPlateau = Math.abs(delta) < 0.2;
-    
-    if (isPlateau) {
-      if (ctx.water.avg3d < (ctx.water.goal * 0.7)) {
-        ins.push({ icon: '⚖️', msg: 'DIAGNOSIS: WATER RETENTION', action: 'Weight is stagnant due to low hydration history (' + ctx.water.avg3d.toFixed(1) + ' glasses avg). Body is holding "survival water". Double intake to flush it out.' });
-      } else if (ctx.diet.avg3d < 80) {
-        ins.push({ icon: '🧬', msg: 'DIAGNOSIS: CORTISOL BLOCK', action: 'Plateau alert. Inconsistent meals trigger stress hormones, slowing loss. Hit 100% dietary adherence for the next 48 hours to reset.' });
-      } else {
-        ins.push({ icon: '🦾', msg: 'DIAGNOSIS: BODY RECOMP', action: 'Plateau is an illusion. Perfect adherence suggests you are losing fat and gaining dense muscle simultaneously. Use "Mirror & Fit" as your primary metrics now.' });
-      }
-    } else if (delta < -1.2) {
-      ins.push({ icon: '⚠️', msg: 'CRITICAL DROP: CATABOLIC RISK', action: 'Lost ' + Math.abs(delta).toFixed(1) + 'kg in 7 days. This speed risks muscle loss. Increase protein intake to ' + (m.weight * 2.2).toFixed(0) + 'g and add 200kcal of clean fuel.' });
-    }
+  
+  if (m.muscleRate < (m.gender === 'male' ? 35 : 28)) {
+    ins.push({
+      icon: '💪',
+      msg: 'MUSCLE MASS LOW: ' + m.muscleRate.toFixed(1) + '%',
+      action: 'Muscle: ' + m.muscleMass.toFixed(1) + 'kg (' + m.muscleRate.toFixed(1) + '% of body). Add strength training 4x/week + protein ' + (weightAnalysis.currentWeight * 2.0).toFixed(0) + 'g/day. Muscle increases metabolism.'
+    });
   }
-
-  // --- 4. PRECISE NUTRITIONAL STRATEGY ---
+  
+  // ═══ TIER 3: BODY FAT ANALYSIS ═══
+  var bfTarget = m.gender === 'male' ? 15 : 22;
+  if (m.bfr > bfTarget + 10) {
+    ins.push({
+      icon: '🔥',
+      msg: 'AGGRESSIVE FAT LOSS PHASE',
+      action: 'Body Fat: ' + m.bfr.toFixed(1) + '% (Target: ' + bfTarget + '%). Fat mass: ' + weightAnalysis.fatMass.toFixed(1) + 'kg. Lose 1kg fat every 7-10 days at 500kcal deficit.'
+    });
+  } else if (m.bfr <= bfTarget + 2) {
+    ins.push({
+      icon: '🏆',
+      msg: 'BODY FAT OPTIMAL',
+      action: 'Body Fat: ' + m.bfr.toFixed(1) + '% (Target achieved!). Muscle: ' + m.muscleMass.toFixed(1) + 'kg. Focus: Maintenance. Add 200kcal, prioritize protein & strength.'
+    });
+  }
+  
+  // ═══ TIER 4: BMI & WEIGHT TRACKING ═══
+  if (weightAnalysis.bmi < 18.5) {
+    ins.push({
+      icon: '📊',
+      msg: 'UNDERWEIGHT STATUS',
+      action: 'BMI: ' + weightAnalysis.bmi.toFixed(1) + ' (Underweight). Target range: ' + (18.5 * Math.pow(profile.height / 100, 2)).toFixed(0) + '-' + (24.9 * Math.pow(profile.height / 100, 2)).toFixed(0) + 'kg. Gain muscle: +300kcal + protein ' + (weightAnalysis.currentWeight * 2.0).toFixed(0) + 'g/day.'
+    });
+  } else if (weightAnalysis.weeklyDelta === 0 || Math.abs(weightAnalysis.weeklyDelta) < 0.2) {
+    var plateauReason = '';
+    if (ctx.water && ctx.water.avg3d < (ctx.water.goal * 0.7)) {
+      plateauReason = 'water (avg: ' + ctx.water.avg3d.toFixed(1) + ' vs goal: ' + ctx.water.goal + ')';
+    } else if (ctx.diet && ctx.diet.avg3d < 75) {
+      plateauReason = 'meal adherence (' + ctx.diet.avg3d.toFixed(0) + '%)';
+    } else {
+      plateauReason = 'body adapting - likely recomposition';
+    }
+    ins.push({
+      icon: '⚖️',
+      msg: 'WEIGHT PLATEAU DETECTED',
+      action: 'Weight: ' + weightAnalysis.currentWeight.toFixed(1) + 'kg stable. Root: ' + plateauReason + '. If fixable issue, resolve in 3-5 days. Otherwise, losing fat + gaining muscle = PROGRESS.'
+    });
+  } else if (Math.abs(week7.weightTrend) > 0.3) {
+    var direction = week7.weightTrend < 0 ? 'losing' : 'gaining';
+    var etalabel = Math.ceil((weightAnalysis.remaining) / Math.abs(week7.weightTrend));
+    ins.push({
+      icon: '📈',
+      msg: 'WEIGHT MOMENTUM: ' + (week7.weightTrend < 0 ? '-' : '+') + Math.abs(week7.weightTrend).toFixed(2) + 'kg/week',
+      action: 'Trend: ' + direction + ' ' + Math.abs(week7.weightTrend).toFixed(2) + 'kg/week. Current: ' + weightAnalysis.currentWeight.toFixed(1) + 'kg → Goal: ' + weightAnalysis.targetWeight + 'kg. ETA: ' + etalabel + ' weeks.'
+    });
+  }
+  
+  // ═══ TIER 5: METABOLIC INSIGHTS ═══
   var maintenance = Math.round(m.bmr * 1.375);
-  var targetKcal = m.bmi >= 25 ? (maintenance - 500) : (m.bmi < 18.5 ? (maintenance + 400) : maintenance);
-  var proteinTarget = Math.round(m.weight * 2.0);
+  var deficitCurrent = Math.abs(Math.round(maintenance - ((Math.abs(weightAnalysis.weeklyDelta || 0.5) * 3500) / 7)));
   
-  var nutMsg = m.bmi >= 25 ? 'Aggressive Fat Loss' : (m.bmi < 18.5 ? 'Anabolic Mass Gain' : 'Peak Performance');
-  ins.push({ 
-    icon: '🍱', 
-    msg: nutMsg + ' Strategy', 
-    action: 'Aim for ' + targetKcal + ' kcal/day. Priority: ' + proteinTarget + 'g Protein. This ensures ' + (m.bmi >= 25 ? 'fat loss without muscle atrophy.' : 'optimal tissue repair.') 
+  ins.push({
+    icon: '🔋',
+    msg: 'METABOLIC RATE: BMR ' + Math.round(m.bmr) + ' | TDEE ' + maintenance + ' kcal',
+    action: 'Basal (rest): ' + Math.round(m.bmr) + 'kcal. Total: ' + maintenance + 'kcal/day. Current deficit: ' + deficitCurrent + 'kcal/day → ' + (deficitCurrent * 7 / 3500).toFixed(1) + 'kg/week loss potential. For weight goal, target: ' + (Math.round(maintenance * 0.85)) + 'kcal/day.'
   });
-
-  // --- 5. BIOLOGICAL AGING & CELLULAR HEALTH ---
-  if (m.bodyAge > m.age) {
-    ins.push({ icon: '🎂', msg: 'AGING REVERSAL REQUIRED', action: 'Biological age is ' + (m.bodyAge - m.age) + ' years ahead. Focus on lowering Visceral Fat (<9) and increasing TBW (>55%) to reverse cellular aging.' });
-  } else if (m.tbwPct < 50 || m.viscIdx >= 10) {
-     ins.push({ icon: '🧬', msg: 'CELLULAR INTEGRITY', action: 'Visceral fat (' + m.viscIdx + ') is pressuring internal organs. Cut fast-acting sugars to prevent inflammation and metabolic syndrome.' });
+  
+  // ═══ TIER 6: BIOLOGICAL AGE ═══
+  var ageStatus = weightAnalysis.bodyAge > weightAnalysis.chronoAge ? 'AGED' : 'REVERSED';
+  var ageDiff = Math.abs(weightAnalysis.bodyAge - weightAnalysis.chronoAge);
+  if (ageStatus === 'AGED' && ageDiff > 0) {
+    ins.push({
+      icon: '🎂',
+      msg: 'BIOLOGICAL AGE: ' + weightAnalysis.bodyAge + ' (Actual: ' + weightAnalysis.chronoAge + ')',
+      action: 'Aging: +' + ageDiff + ' years due to body fat (' + m.bfr.toFixed(1) + '%) and hydration (' + m.tbwPct.toFixed(1) + '%). Reverse aging: Lower fat to ' + bfTarget + '% + TBW to 55%+. Reverses cellular age.'
+    });
+  } else if (ageDiff > 0) {
+    ins.push({
+      icon: '✨',
+      msg: 'BIOLOGICAL AGE REVERSED: ' + weightAnalysis.bodyAge + ' (Actual: ' + weightAnalysis.chronoAge + ')',
+      action: 'Age reversed ' + ageDiff + ' years! Metrics excellent: Fat ' + m.bfr.toFixed(1) + '%, TBW ' + m.tbwPct.toFixed(1) + '%, Muscle ' + m.muscleRate.toFixed(1) + '%. Maintain this consistency.'
+    });
   }
-
-  // Final Cleanup & Priority Sorting
-  if (ins.length === 0) ins.push({ icon: '🏆', msg: 'Elite Performance', action: 'All metrics optimized. Focus on advanced mobility and micronutrient timing.' });
   
-  ins.sort(function(a, b) {
-    var p = {'🚨': 1, '🎂': 2, '⚖️': 3, '💠': 4, '🍱': 5};
-    return (p[a.icon] || 9) - (p[b.icon] || 9);
+  // ═══ TIER 7: HYDRATION & CELLULAR ═══
+  if (m.tbwPct < 50) {
+    ins.push({
+      icon: '💧',
+      msg: 'DEHYDRATION: TBW ' + m.tbwPct.toFixed(1) + '%',
+      action: 'Body water: ' + m.tbwPct.toFixed(1) + '% (target: 52-58%). Add 2-3 glasses/day for 7 days. Retest. Proper hydration = faster metabolism & better fat loss.'
+    });
+  }
+  
+  // ═══ TIER 8: WEIGHT HISTORY ═══
+  if (weights.length >= 7) {
+    var firstWeight = weights[0].kg;
+    var totalLoss = firstWeight - weightAnalysis.currentWeight;
+    var totalDays = (new Date(weights[weights.length - 1].date) - new Date(weights[0].date)) / (1000 * 60 * 60 * 24);
+    var avgWeeklyLoss = (totalLoss / (totalDays / 7));
+    
+    if (totalLoss > 0 && avgWeeklyLoss > 0) {
+      var etaWeeks = Math.ceil((weightAnalysis.remaining) / (avgWeeklyLoss || 0.5));
+      ins.push({
+        icon: '🎯',
+        msg: 'TOTAL PROGRESS: -' + totalLoss.toFixed(1) + 'kg in ' + Math.ceil(totalDays) + ' days',
+        action: 'History: ' + firstWeight.toFixed(1) + 'kg → ' + weightAnalysis.currentWeight.toFixed(1) + 'kg. Average: ' + avgWeeklyLoss.toFixed(2) + 'kg/week. Remaining: ' + weightAnalysis.remaining.toFixed(1) + 'kg. ETA: ' + etaWeeks + ' weeks.'
+      });
+    }
+  }
+  
+  // ═══ PRIORITY & CLEANUP ═══
+  if (ins.length === 0) {
+    ins.push({
+      icon: '🏆',
+      msg: 'ALL METRICS OPTIMAL',
+      action: 'Weight: ' + weightAnalysis.currentWeight.toFixed(1) + 'kg | Fat: ' + m.bfr.toFixed(1) + '% | Muscle: ' + m.muscleMass.toFixed(1) + 'kg | Age: ' + m.bodyAge + 'yrs | TBW: ' + m.tbwPct.toFixed(1) + '%. Elite metrics. Focus: advanced periodization & recovery.'
+    });
+  }
+  
+  var priority = { '🚨': 0, '⚠️': 1, '⚡': 2, '💪': 3, '🔥': 4, '📊': 5, '⚖️': 6, '📈': 7, '🔋': 8, '🎂': 9, '✨': 10, '💧': 11, '🎯': 12, '🏆': 13 };
+  ins.sort(function (a, b) {
+    return (priority[a.icon] || 99) - (priority[b.icon] || 99);
   });
-
-  return ins.slice(0, 4); 
+  
+  return ins.slice(0, 8);
 }
 
 function createMetricCard(icon, val, unit, label, cls, idx, status) {
@@ -1849,6 +2117,182 @@ function createMetricCard(icon, val, unit, label, cls, idx, status) {
     '<div class="metric-lbl">' + label + '</div>' +
     '</div>';
 }
+
+// ═══════════════════════════════════════════════
+// ADVANCED CYCLE ANALYSIS & INTELLIGENCE
+// ═══════════════════════════════════════════════
+
+function generateCycleAnalysisHtml() {
+  var week7 = calculateAdvancedMetrics(7);
+  var week14 = calculateAdvancedMetrics(14);
+  var month30 = calculateAdvancedMetrics(30);
+  var patterns = detectPatterns();
+  
+  var html = '<div class="intelligence-section" style="margin:20px 16px; padding:16px; background:linear-gradient(135deg, rgba(34,197,94,0.08), rgba(255,107,26,0.05)); border:1px solid rgba(255,107,26,0.2); border-radius:16px; backdrop-filter:blur(10px);">';
+  
+  // Header
+  html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:6px;">🧠 CYCLE INTELLIGENCE</div>';
+  
+  // Three-period comparison
+  html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">';
+  
+  html += '<div style="background:rgba(34,197,94,0.1); border:1px solid var(--green); border-radius:10px; padding:10px; text-align:center;">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">7-DAY SCORE</div>';
+  html += '<div style="font-size:1.2rem; color:var(--green); font-weight:900; margin:4px 0;">' + week7.consistencyScore + '%</div>';
+  html += '<div style="font-size:0.6rem; color:var(--sub);">W:' + week7.waterDays + ' D:' + week7.mealAdherence + '% T:' + week7.workoutAdherence + '%</div>';
+  html += '</div>';
+  
+  html += '<div style="background:rgba(255,107,26,0.1); border:1px solid var(--gold); border-radius:10px; padding:10px; text-align:center;">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">14-DAY TREND</div>';
+  html += '<div style="font-size:1.2rem; color:var(--gold); font-weight:900; margin:4px 0;">' + week14.consistencyScore + '%</div>';
+  if (week7.weightDelta !== '0') {
+    html += '<div style="font-size:0.6rem; color:var(--fire);">Weight: ' + (week14.weightDelta > 0 ? '+' : '') + week14.weightDelta + 'kg</div>';
+  }
+  html += '</div>';
+  
+  html += '<div style="background:rgba(100,200,255,0.1); border:1px solid var(--blue); border-radius:10px; padding:10px; text-align:center;">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">30-DAY AVG</div>';
+  html += '<div style="font-size:1.2rem; color:var(--blue); font-weight:900; margin:4px 0;">' + month30.consistencyScore + '%</div>';
+  html += '<div style="font-size:0.6rem; color:var(--sub);">Stability: ' + (patterns.consistency === 'STABLE PERFORMANCE' ? '✓' : patterns.consistency === 'IMPROVING TREND' ? '↗' : '↘') + '</div>';
+  html += '</div>';
+  
+  html += '</div>';
+  
+  // Key patterns
+  html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; font-size:0.65rem;">';
+  html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--green);"><strong>🌊</strong> ' + patterns.waterTrend + '</div>';
+  html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--gold);"><strong>🍱</strong> ' + patterns.mealTrend + '</div>';
+  html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--fire);"><strong>💪</strong> ' + patterns.workoutTrend + '</div>';
+  html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--purple);"><strong>⚡</strong> Weak: ' + patterns.weakPoint + '</div>';
+  html += '</div>';
+  
+  // Discipline rating with visual
+  var ratingColor = week7.disciplineRating === 'ELITE' ? 'var(--green)' : (week7.disciplineRating === 'EXCELLENT' ? 'var(--gold)' : 'var(--sub)');
+  html += '<div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid ' + ratingColor + '44; margin-bottom:8px;">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">DISCIPLINE RATING</div>';
+  html += '<div style="display:flex; align-items:center; gap:8px; margin-top:4px;">';
+  
+  var stars = '';
+  var ratingVal = week7.disciplineRating === 'ELITE' ? 5 : (week7.disciplineRating === 'EXCELLENT' ? 4 : (week7.disciplineRating === 'GOOD' ? 3 : 2));
+  for (var s = 0; s < ratingVal; s++) stars += '⭐';
+  for (var s = ratingVal; s < 5; s++) stars += '☆';
+  
+  html += '<div style="font-size:0.9rem; color:' + ratingColor + '; font-weight:900;">' + stars + '</div>';
+  html += '<div style="flex:1; font-size:0.65rem; color:var(--sub);">' + week7.disciplineRating + ' | Score: ' + week7.consistencyScore + '/100</div>';
+  html += '</div>';
+  html += '</div>';
+  
+  html += '</div>';
+  
+  return html;
+}
+
+function generatePredictiveInsights() {
+  var profile = DB.profile();
+  var weights = DB.weights();
+  var week7 = calculateAdvancedMetrics(7);
+  
+  if (weights.length < 3 || !profile.targetWeight) {
+    return '<div style="padding:10px; font-size:0.7rem; color:var(--sub); text-align:center;">Log more data for predictive analytics...</div>';
+  }
+  
+  var latest = weights[weights.length - 1].kg;
+  var current = latest;
+  var target = parseFloat(profile.targetWeight);
+  var weeklyRate = parseFloat(week7.weightTrend) || 0;
+  
+  var html = '<div class="prediction-card" style="margin:20px 16px; padding:16px; background:linear-gradient(135deg, rgba(168,107,207,0.1), rgba(88,198,255,0.05)); border:1px solid rgba(168,107,207,0.2); border-radius:16px;">';
+  
+  html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--purple); margin-bottom:12px; display:flex; align-items:center; gap:6px;">🔮 PREDICTIVE ANALYTICS</div>';
+  
+  if (weeklyRate < -0.3) {
+    var weeksRemaining = Math.ceil((current - target) / Math.abs(weeklyRate));
+    var projDate = new Date();
+    projDate.setDate(projDate.getDate() + (weeksRemaining * 7));
+    
+    html += '<div style="background:rgba(34,197,94,0.1); padding:12px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--green);">';
+    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">PROJECTED GOAL DATE</div>';
+    html += '<div style="font-size:1.1rem; font-weight:900; color:var(--green); margin-top:4px;">📅 ' + toLocalDate(projDate) + '</div>';
+    html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:4px;">At current rate: ' + Math.abs(weeklyRate).toFixed(2) + 'kg/week</div>';
+    html += '</div>';
+    
+    html += '<div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; margin-bottom:10px; font-size:0.7rem;">';
+    html += '<strong>📊 Weight Loss Physics:</strong><br>';
+    html += 'Current: ' + current.toFixed(1) + 'kg | Target: ' + target + 'kg | Remaining: ' + (current - target).toFixed(1) + 'kg<br>';
+    html += 'Weekly rate: ' + Math.abs(weeklyRate).toFixed(2) + 'kg | ETA: ' + weeksRemaining + ' weeks';
+    html += '</div>';
+  } else if (weeklyRate > 0.3) {
+    html += '<div style="background:rgba(239,68,68,0.1); padding:12px; border-radius:10px; border-left:4px solid var(--red);">';
+    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">⚠️ GAINING WEIGHT</div>';
+    html += '<div style="font-size:0.9rem; color:var(--red); font-weight:900; margin-top:4px;">+' + weeklyRate.toFixed(2) + 'kg/week</div>';
+    html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:6px;">Action: Review calorie intake & meal timing. Increase activity level.</div>';
+    html += '</div>';
+  } else {
+    html += '<div style="background:rgba(168,107,207,0.1); padding:12px; border-radius:10px; border-left:4px solid var(--purple);">';
+    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">🏔️ PLATEAU STATE</div>';
+    html += '<div style="font-size:0.9rem; color:var(--purple); font-weight:900; margin-top:4px;">Change: ' + Math.abs(weeklyRate).toFixed(2) + 'kg/week (stable)</div>';
+    html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:6px;">Body recomposition in progress. Track body measurements & photos for better progress indication.</div>';
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  
+  return html;
+}
+
+// ═══════════════════════════════════════════════
+// ADVANCED METRICS RENDERING
+// ═══════════════════════════════════════════════
+
+function generateAdvancedMetricsHtml() {
+  var week7 = calculateAdvancedMetrics(7);
+  var profile = DB.profile();
+  
+  var html = '<div class="advanced-metrics-section" style="margin:20px 16px; padding:16px; background:rgba(255,107,26,0.05); border:1px solid rgba(255,107,26,0.15); border-radius:16px;">';
+  
+  html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--fire); margin-bottom:12px;">📊 ADVANCED METRICS (7D AVG)</div>';
+  
+  html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">';
+  
+  // Water metrics
+  html += '<div style="background:rgba(88,198,255,0.1); padding:10px; border-radius:10px; border-left:3px solid var(--blue);">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">💧 HYDRATION</div>';
+  html += '<div style="font-size:0.95rem; color:var(--blue); font-weight:900;">'+week7.waterAvg+'L/day</div>';
+  html += '<div style="font-size:0.6rem; color:var(--sub);">Goal: '+week7.waterGoal+' glasses</div>';
+  html += '</div>';
+  
+  // Diet adherence
+  html += '<div style="background:rgba(255,184,82,0.1); padding:10px; border-radius:10px; border-left:3px solid var(--gold);">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">🍱 DIET ADHERENCE</div>';
+  html += '<div style="font-size:0.95rem; color:var(--gold); font-weight:900;">'+week7.mealAdherence+'%</div>';
+  html += '<div style="font-size:0.6rem; color:var(--sub);">'+week7.mealDays+'/7 days tracked</div>';
+  html += '</div>';
+  
+  // Workout adherence
+  html += '<div style="background:rgba(255,107,26,0.1); padding:10px; border-radius:10px; border-left:3px solid var(--fire);">';
+  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">🏋️ TRAINING ADHERENCE</div>';
+  html += '<div style="font-size:0.95rem; color:var(--fire); font-weight:900;">'+week7.workoutAdherence+'%</div>';
+  html += '<div style="font-size:0.6rem; color:var(--sub);">'+week7.workoutDays+'/7 days completed</div>';
+  html += '</div>';
+  
+  // Weight trend
+  if (week7.weightDelta !== '0' && week7.weightDelta !== 0) {
+    var trendColor = parseFloat(week7.weightDelta) < 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="background:rgba(34,197,94,0.1); padding:10px; border-radius:10px; border-left:3px solid '+trendColor+';">';
+    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">⚖️ WEIGHT DELTA</div>';
+    html += '<div style="font-size:0.95rem; color:'+trendColor+'; font-weight:900;">' + (parseFloat(week7.weightDelta) > 0 ? '+' : '') + week7.weightDelta + 'kg</div>';
+    html += '<div style="font-size:0.6rem; color:var(--sub);">7-day change</div>';
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  
+  html += '</div>';
+  
+  return html;
+}
+
+
 
 // ═══════════════════════════════════════════════
 // SETUP & BOOT
@@ -2613,8 +3057,54 @@ function initHaptics() {
   });
 }
 
-// Initialize tilt and haptics
+/* ── SPLASH SCREEN LOGIC ───────────────────── */
+function initSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+
+  // Simulate loading steps for premium feel
+  const status = splash.querySelector('.splash-status');
+  const loader = splash.querySelector('.loader-bar');
+
+  const quote = DAILY_MOTIVATIONS[Math.floor(Math.random() * DAILY_MOTIVATIONS.length)];
+
+  // Create a directive element so it can stick under the status
+  const directive = document.createElement('div');
+  directive.className = 'splash-directive';
+  directive.style.width = '100%';
+  directive.style.maxWidth = '280px';
+  directive.style.margin = '20px auto 0';
+  directive.style.opacity = '0';
+  directive.style.transition = 'opacity 0.8s ease';
+  directive.style.fontSize = '0.65rem';
+  directive.style.color = 'var(--sub)';
+  directive.style.lineHeight = '1.5';
+  directive.style.textAlign = 'center';
+  directive.style.fontFamily = "'JetBrains Mono', monospace";
+  directive.style.wordWrap = 'break-word';
+  directive.innerHTML = '<span style="color:var(--fire); font-weight:800; letter-spacing:2px; display:block; margin-bottom:5px;">DIRECTIVE</span>' + quote.toUpperCase();
+  
+  if (status) status.parentNode.appendChild(directive);
+
+  setTimeout(() => { if (status) status.textContent = "DECRYPTING BIO-METRICS..."; }, 400);
+  setTimeout(() => { if (status) status.textContent = "SYNCING WITH CORE..."; }, 1000);
+  setTimeout(() => { 
+    directive.style.opacity = '1'; 
+    if (status) status.textContent = "SYSTEM READY";
+  }, 1800);
+
+  setTimeout(() => {
+    splash.classList.add('fade-out');
+    initBackgroundMode();
+    setTimeout(() => {
+      splash.remove();
+    }, 600);
+  }, 4400);
+}
+
+// Initialize tilt, haptics and splash
 document.addEventListener('DOMContentLoaded', function () {
+  initSplash();
   initTiltEffect();
   initHaptics();
   updateTopbar();
