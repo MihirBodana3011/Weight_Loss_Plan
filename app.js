@@ -3,20 +3,144 @@
 // ═══════════════════════════════════════════════
 var DAY_NAMES, DAY_SHORT, DAY_WORKOUT_TYPE, WORKOUTS, WEEKLY_MEALS, MEAL_CONFIG, DAILY_MACROS, DAILY_TIMELINE;
 var DATA_LOADED = false;
-var EXPANDED_MEAL_ID = null; // Track currently expanded meal detail
+var EXPANDED_MEAL_ID = null;
+
+var DAILY_MOTIVATIONS = [
+  "Pain is temporary. Quitting lasts forever.",
+  "Every rep counts. Every meal matters. Stay locked in.",
+  "You didn't come this far to only come this far.",
+  "The body achieves what the mind believes.",
+  "Discipline beats motivation every single day.",
+  "Push harder than yesterday if you want a different tomorrow.",
+  "Sweat now. Shine later. No shortcuts.",
+  "Your only competition is who you were yesterday.",
+  "Small steps every day — massive results every month.",
+  "The grind doesn't stop. Neither do you.",
+  "Eat right. Train hard. Sleep deep. Repeat.",
+  "Champions are made in the moments they want to quit.",
+  "Progress, not perfection. Keep moving.",
+  "Your future self is watching — make them proud.",
+  "One day or day one. You decide.",
+  "Success is the sum of small efforts repeated daily.",
+  "Don't stop when you're tired. Stop when you're done.",
+  "The secret to getting ahead is getting started.",
+  "Strength doesn't come from what you can do — it comes from overcoming what you thought you couldn't.",
+  "Hard days build strong people.",
+  "Fall in love with the process and results will follow.",
+  "No excuses. No days off. Full send.",
+  "Transform your body. Transform your life.",
+  "Every workout is a step closer to the best version of you.",
+  "The pain you feel today is the strength you feel tomorrow.",
+  "Stay consistent. Stay patient. Stay focused.",
+  "Eat clean. Train mean. Stay lean.",
+  "You are one workout away from a good mood.",
+  "Ninety days of grind. A lifetime of results.",
+  "FASTED. FOCUSED. FEARLESS."
+];
+
+// ═══════════════════════════════════════════════
+// NEURAL CORE (SMART ANALYTICS ENGINE)
+// ═══════════════════════════════════════════════
+var NeuralCore = {
+  // 1RM Calculator (Brzycki Formula)
+  calc1RM: function(w, r) {
+    if (r === 1) return w;
+    return Math.round(w / (1.0278 - (0.0278 * r)));
+  },
+
+  // Predict weight in N days based on recent trend (past 7-14 days)
+  predictWeight: function(days) {
+    var weights = DB.weights();
+    if (weights.length < 3) return null;
+    
+    // Simple linear trend based on first and last log in the window
+    var start = weights[0];
+    var end = weights[weights.length - 1];
+    var dayDiff = (end.t - start.t) / (1000 * 60 * 60 * 24);
+    if (dayDiff < 1) return end.kg;
+    
+    var ratePerDay = (end.kg - start.kg) / dayDiff;
+    return (end.kg + (ratePerDay * days)).toFixed(1);
+  },
+
+  // Identify plateau (weight hasn't changed > 0.5% in 14 days despite > 90% adherence)
+  isPlateau: function() {
+    var weights = DB.weights();
+    if (weights.length < 5) return false;
+    
+    var recent = weights.slice(-5);
+    var first = recent[0].kg;
+    var last = recent[recent.length - 1].kg;
+    var diff = Math.abs(first - last);
+    var pctChange = (diff / first) * 100;
+    
+    return pctChange < 0.5; // Less than 0.5% change
+  },
+
+  // Calculate Volume Load (Sets x Reps x Weight)
+  calcVolume: function(exercises) {
+    var vol = 0;
+    for (var id in exercises) {
+      var ex = exercises[id];
+      var sw = ex.setWeights || {};
+      var sd = ex.setDone || {};
+      for (var s in sd) {
+        if (sd[s]) {
+          var w = parseFloat(sw[s]) || 0;
+          // Assume reps from workout config or 10 if unknown
+          vol += w * 10; 
+        }
+      }
+    }
+    return vol;
+  },
+
+  // Recovery Readiness Score (0-100)
+  getRecoveryIndex: function() {
+    var mas = getMetabolicAdaptabilityScore();
+    var weights = DB.weights();
+    var fatigue = 0;
+    
+    if (weights.length > 2) {
+      var latest = weights[weights.length - 1].kg;
+      var prev = weights[weights.length - 2].kg;
+      if (latest > prev + 1) fatigue += 20; // Rapid water weight spike
+    }
+    
+    return Math.max(0, mas - fatigue);
+  },
+
+  // Smart Macro Adjustment based on Goal & BF%
+  getMacroAdjustment: function() {
+    var p = DB.profile();
+    var bf = parseFloat(p.bodyFat || 20);
+    var goal = p.goalMode || 'cut';
+    
+    var adj = { cal: 0, protein: 0 };
+    if (goal === 'cut') {
+      adj.cal = -500;
+      adj.protein = bf > 25 ? 1.8 : 2.2; // Higher protein for leaner people on cut
+    } else {
+      adj.cal = 300;
+      adj.protein = 2.0;
+    }
+    return adj;
+  }
+};
 
 var DAILY_SUPPLEMENTS = {
   "supp_fatburner": "<strong>Usage:</strong> 1 Tablet with warm water 30-45 mins before gym.<br><strong>Benefits:</strong> Stimulates fat oxidation, controls cravings, and boosts metabolic rate using Green Coffee, Guggul, and Pippali.",
-  "supp_centrum": "<strong>Usage:</strong> 1 Tablet daily immediately after lunch.<br><strong>Benefits:</strong> Supports immunity, muscle function, and heart health with 24 essential vitamins and minerals plus Grape Seed Extract.",
-  "supp_tslim": "<strong>Usage:</strong> 1 Tablet 30 minutes before your dinner.<br><strong>Benefits:</strong> High Garcinia Cambogia (500mg) helps suppress appetite and L-Carnitine assists in converting stored fat into energy.",
-  "supp_jeera1": "<strong>Usage:</strong> 1 Cup warm drink.<br><strong>Benefits:</strong> Improves digestion and metabolism.",
-  "supp_acv1": "<strong>Usage:</strong> 1 tbsp in 250ml warm water.<br><strong>Benefits:</strong> Improves insulin sensitivity and aids fat loss.",
+  "supp_centrum": "<strong>Usage:</strong> 1 Tablet with lunch.<br><strong>Benefits:</strong> Supports immunity, muscle function, and heart health with 24 essential vitamins and minerals plus Grape Seed Extract.",
+  "supp_tslim": "<strong>Usage:</strong> 1 Tablet at 12:15 PM with lunch.<br><strong>Benefits:</strong> Helps control appetite before the evening window and supports fat metabolism.",
+  "supp_jeera1": "<strong>Usage:</strong> 1 cup warm drink with lemon, jeera, saunf, and ajwain.<br><strong>Benefits:</strong> Detox support and digestion boost.",
+  "supp_acv1": "<strong>Usage:</strong> 1 tbsp in 250ml warm water, ideally 90 min after lunch.<br><strong>Benefits:</strong> Improves insulin sensitivity and supports fat loss.",
   "supp_isab1": "<strong>Usage:</strong> 1 tsp in water.<br><strong>Benefits:</strong> High fiber for digestive health and satiety.",
-  "supp_jeera2": "<strong>Usage:</strong> 1 Cup warm drink.<br><strong>Benefits:</strong> Afternoon metabolic reset and digestion support.",
+  "supp_jeera2": "<strong>Usage:</strong> 1 cup warm drink.<br><strong>Benefits:</strong> Afternoon digestion support.",
   "supp_acv2": "<strong>Usage:</strong> 1 tbsp in 250ml warm water.<br><strong>Benefits:</strong> Supports blood sugar stability before dinner.",
-  "supp_isab2": "<strong>Usage:</strong> 1 tsp in water.<br><strong>Benefits:</strong> High fiber to help with satiety and prevent overeating at dinner.",
-  "supp_gt": "Metabolism boost & last drink of the day — skip if sensitive to caffeine.",
-  "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts."
+  "supp_isab2": "<strong>Usage:</strong> 1 tsp in lukewarm water before dinner.<br><strong>Benefits:</strong> High fiber to help control hunger and support bowel regularity.",
+  "supp_snack": "<strong>Usage:</strong> 30g roasted chana or 20g makhana during office break.<br><strong>Benefits:</strong> Low-calorie protein snack to manage hunger.",
+  "supp_gt": "<strong>Usage:</strong> 1 cup plain green tea, no sugar.<br><strong>Benefits:</strong> Calorie-free metabolism support and night-time hydration.",
+  "pregym": "1 medium banana + black coffee no sugar, no milk"
 };
 
 function todayDay() {
@@ -133,15 +257,58 @@ var DB = {
     // Also update the latest weight in daily data for summary cards
     this._updateDay(date, { weight: parseFloat(kg) });
   },
+  exWeights: function (exId) {
+    var uid = this.profile().userId;
+    var logs = this._g('fp_exWeightLogs') || [];
+    return logs.filter(function (l) { return l.userId === uid && l.exId === exId; }).sort(function (a, b) { return a.t - b.t; });
+  },
+  addExWeight: function (exId, kg) {
+    var uid = this.profile().userId;
+    var logs = this._g('fp_exWeightLogs') || [];
+    logs.push({ userId: uid, exId: exId, kg: parseFloat(kg), t: Date.now() });
+    this._s('fp_exWeightLogs', logs);
+  },
   exportData: function () {
     var uid = this.profile().userId;
-    var data = { profile: this.profile(), daily: this._getData().filter(function (d) { return d.userId === uid; }), weights: this.weights() };
+    var data = { 
+      version: "2.0",
+      profile: this.profile(), 
+      daily: this._getData().filter(function (d) { return d.userId === uid; }), 
+      weights: this.weights(),
+      advanced: this._g('fp_advancedData') || {}
+    };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
     a.download = 'FitOS_Data_' + uid + '_' + today() + '.json';
     a.click();
+  },
+  exportCSV: function() {
+    var data = this._getData();
+    var csv = "Date,Weight,Water,Steps,WorkoutDone,DietDone\n";
+    data.forEach(d => {
+      csv += `${d.date},${d.weight},${d.water},${d.steps},${d.workout},${d.diet}\n`;
+    });
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'FitOS_Progress_' + today() + '.csv';
+    a.click();
+  },
+  importData: function(jsonStr) {
+    try {
+      var data = JSON.parse(jsonStr);
+      if (data.profile) this._s('fp_profile', data.profile);
+      if (data.daily) this._s('fp_userData', data.daily);
+      if (data.weights) this._s('fp_weightLogs', data.weights);
+      if (data.advanced) this._s('fp_advancedData', data.advanced);
+      return true;
+    } catch(e) {
+      console.error("Import failed", e);
+      return false;
+    }
   },
 
   getWater: function (date) { return this._getDayEntry(date).water || 0; },
@@ -185,16 +352,45 @@ var DB = {
     var d = this._getDayEntry(date);
     var w = d._rawWorkout || {};
     if (!w.exercises) w.exercises = {};
-    var ex = {};
-    for (var k in w.exercises[exId]) ex[k] = w.exercises[exId][k];
+    var ex = w.exercises[exId] || {};
     for (var k in data) ex[k] = data[k];
     w.exercises[exId] = ex;
-    // CRITICAL NUCLEAR FIX: Force binary true for workout activity
     this._updateDay(date, { _rawWorkout: w, workout: true });
-    // Also save a dedicated flag in user preferences as a third backup
     this._s('last_active_date', date);
+  },
+  // Advanced Metrics store
+  getAdvanced: function(key) { return (this._g('fp_advancedData') || {})[key]; },
+  setAdvanced: function(key, val) {
+    var d = this._g('fp_advancedData') || {};
+    d[key] = val;
+    this._s('fp_advancedData', d);
   }
 };
+
+function openImportModal() {
+  openModal(
+    '<div class="modal-title">🔄 RESTORE DATA</div>' +
+    '<div style="font-size:0.7rem; color:var(--sub); margin-bottom:15px;">Upload your FitOS backup (.json) to restore all profile and progress data.</div>' +
+    '<input type="file" id="import-file" accept=".json" style="display:none;" onchange="handleImportFile(this)"/>' +
+    '<button class="modal-btn primary" onclick="document.getElementById(\'import-file\').click()">SELECT FILE</button>'
+  );
+}
+
+function handleImportFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var success = DB.importData(e.target.result);
+    if (success) {
+      showToast('✅ Progress Restored! Restarting...');
+      setTimeout(function() { location.reload(); }, 1500);
+    } else {
+      showToast('❌ Invalid format.');
+    }
+  };
+  reader.readAsText(file);
+}
 
 // ═══════════════════════════════════════════════
 // UTILS
@@ -246,13 +442,37 @@ function getDayNum() {
 function getWorkoutType(dayName) { return DAY_WORKOUT_TYPE[dayName] || 'rest'; }
 function todayWorkoutType() { return getWorkoutType(todayDay()); }
 
-function showToast(msg, dur) {
-  if (!dur) dur = 2000;
+function showToast(msg, dur, type) {
+  if (!dur) dur = 2500;
   var t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
+  t.className = '';
+  if (type === 'success') t.classList.add('toast-success');
+  else if (type === 'error') t.classList.add('toast-error');
+  else if (type === 'info') t.classList.add('toast-info');
   t.classList.add('show');
-  setTimeout(function () { t.classList.remove('show'); }, dur);
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function () { t.classList.remove('show'); }, dur);
+}
+
+function calcStreak() {
+  var streak = 0;
+  var d = new Date();
+  var MEAL_IDS = ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'];
+  for (var i = 0; i < 90; i++) {
+    var dStr = toLocalDate(d);
+    var meals = DB.getMeal(dStr);
+    var hasActivity = false;
+    MEAL_IDS.forEach(function(id) { if (meals[id] === true) hasActivity = true; });
+    var wk = DB.getWorkout(dStr);
+    if (wk.completed) hasActivity = true;
+    if (DB.getWater(dStr) > 0) hasActivity = true;
+    if (!hasActivity && i > 0) break;
+    if (hasActivity) streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
 }
 
 function openModal(html) {
@@ -385,6 +605,121 @@ function initNav() {
 // HOME PAGE
 // ═══════════════════════════════════════════════
 // ── helpers for home cards ──────────────────────
+function getTodaySetsProgress() {
+  var wType = todayWorkoutType();
+  var wo = WORKOUTS[wType];
+  if (!wo || !wo.groups) return { done: 0, total: 0, isRest: wType === 'rest' };
+  
+  var totalSets = 0;
+  wo.groups.forEach(function (g) {
+    g.exercises.forEach(function (ex) {
+      if (ex.sets > 0) totalSets += ex.sets;
+    });
+  });
+  
+  var wkData = DB.getWorkout(today());
+  var exData = wkData.exercises || {};
+  var doneSets = 0;
+  
+  wo.groups.forEach(function (g) {
+    g.exercises.forEach(function (ex) {
+      var ed = exData[ex.id] || {};
+      var setDone = ed.setDone || {};
+      for (var i = 1; i <= ex.sets; i++) {
+        if (setDone[i]) doneSets++;
+      }
+    });
+  });
+  
+  return { done: doneSets, total: totalSets, isRest: wType === 'rest' };
+}
+
+function getTodayCaloriesBurned(dayName) {
+  if (!dayName) dayName = todayDay();
+  var wType = getWorkoutType(dayName);
+  var wo = WORKOUTS[wType];
+  if (!wo || !wo.groups || wType === 'rest') return { done: 0, total: 0 };
+  
+  // Calculate date for this day
+  var dDt = new Date();
+  dDt.setDate(dDt.getDate() - dDt.getDay() + DAY_NAMES.indexOf(dayName));
+  var dStr = toLocalDate(dDt);
+  var wkData = DB.getWorkout(dStr);
+  var exData = wkData.exercises || {};
+  var completedCalories = 0;
+  var totalCalories = 0;
+  
+  // Calorie burn per set by exercise type - UPDATED WITH DAY-BY-DAY VALUES
+  // PULL DAY TOTAL: 1,094 cal | PUSH DAY TOTAL: 1,061 cal | POWER DAY TOTAL: 1,306 cal
+  var calorieMap = {
+    // Warm-up exercises
+    "Jumping Jacks": 6, "Arm Circles": 5, "Torso Twists": 5,
+    "Cycling (Warm-up)": 12, "Mobility Work": 12,
+    // Back exercises
+    "Lat Pulldown": 11, "Bent-over Barbell Row": 12, "Seated Cable Row": 11,
+    "Single Arm Cable Row": 10, "Straight Arm Pulldown": 10, "Machine Reverse Fly": 10,
+    // Biceps exercises
+    "Barbell Curl": 10, "Hammer Curl": 9, "Preacher Curl": 9, "Concentration Curl": 8,
+    "Rope Hammer Curl": 9, "Barbell Wrist Curl": 7, "Reverse Wrist Curl": 7,
+    // Chest exercises
+    "Flat Bench Press": 13, "Incline DB Press": 12, "Decline Chest Press": 12,
+    "Pec Deck Fly": 11, "Flat DB Fly": 10, "Cable Crossover": 10,
+    // Triceps exercises
+    "Cable Pushdowns": 10, "Overhead DB Extension": 11, "Skull Crushers (EZ Bar)": 11,
+    "Bench Dips": 10, "Rope Pushdowns": 10,
+    // Ab exercises
+    "Cable Crunches": 9, "Hanging Knee Raises": 10, "Plank": 8, "Russian Twists": 9,
+    "Bicycle Crunches": 9, "Leg Raises": 10, "Crunches": 8,
+    // Leg exercises
+    "Barbell Back Squat": 14, "Sumo Squat": 13, "Leg Press": 13, "Hack Squat": 12,
+    "Leg Extensions": 11, "Walking Lunges": 12, "Box Step-ups": 11,
+    "Lying Leg Curls": 12, "Seated Leg Curls": 11, "Romanian Deadlift": 13,
+    "Good Mornings": 12, "Standing Calf Raise": 9, "Seated Calf Raise": 8,
+    "Leg Press Calf Raise": 9,
+    // Shoulder exercises
+    "Overhead Shoulder Press": 12, "Dumbbell Lateral Raise": 10, "Front Raise": 10,
+    "Face Pulls (Cable)": 9,
+    // Cardio: 12 cal per minute (60 min = 720 cal)
+    "Treadmill Incline Walk": 12
+  };
+  
+  wo.groups.forEach(function (g) {
+    g.exercises.forEach(function (ex) {
+      var ed = exData[ex.id] || {};
+      var setDone = ed.setDone || {};
+      var baseCal = calorieMap[ex.name] || 10; // Default 10 cal per set
+      
+      // For time-based exercises (cardio/warmup), multiply by time in minutes
+      if (ex.time && (ex.name === "Treadmill Incline Walk" || ex.name === "Cycling (Warm-up)" || ex.name === "Mobility Work")) {
+        var timeMatch = ex.time.match(/(\d+)/);
+        if (timeMatch) {
+          var minutes = parseInt(timeMatch[1]);
+          var completedSets = 0;
+          var totalSets = 0;
+          for (var i = 1; i <= ex.sets; i++) {
+            totalSets++;
+            if (setDone[i]) completedSets++;
+          }
+          totalCalories += totalSets * minutes * baseCal;
+          completedCalories += completedSets * minutes * baseCal;
+        }
+      } else {
+        // For rep-based exercises, calories per set
+        var completedSets = 0;
+        for (var i = 1; i <= ex.sets; i++) {
+          totalCalories += baseCal;
+          if (setDone[i]) {
+            completedSets++;
+            completedCalories += baseCal;
+          }
+        }
+      }
+    });
+  });
+  
+  return { done: Math.round(completedCalories), total: Math.round(totalCalories) };
+}
+
 function getTodayWorkoutProgress() {
   var wType = todayWorkoutType();
   var wo = WORKOUTS[wType];
@@ -403,14 +738,58 @@ function getTodayWorkoutProgress() {
 }
 
 function getTodayMealSupplementProgress() {
-  var MEAL_IDS = ['pregym', 'lunch', 'dinner'];
-  var SUPP_IDS = ['supp_fatburner', 'supp_jeera1', 'supp_acv1', 'supp_isab1', 'supp_centrum', 'supp_jeera2', 'supp_acv2', 'supp_isab2', 'supp_tslim', 'supp_gt'];
+  var MEAL_IDS = ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'];
+  var SUPP_IDS = ['supp_fatburner', 'supp_jeera1', 'supp_tslim', 'supp_centrum', 'supp_acv1', 'supp_isab2', 'supp_gt'];
   var mealData = DB.getMeal(today());
   var mealDone = 0;
   MEAL_IDS.forEach(function (id) { if (mealData[id] === true) mealDone++; });
   var suppDone = 0;
   SUPP_IDS.forEach(function (id) { if (mealData[id] === true) suppDone++; });
   return { meals: mealDone, totalMeals: MEAL_IDS.length, supp: suppDone, totalSupp: SUPP_IDS.length };
+}
+
+function updateHomeWorkoutCard() {
+  // Update workout progress card on home screen in real-time
+  var wo = getTodayWorkoutProgress();
+  var sp = getTodaySetsProgress();
+  var wType = todayWorkoutType();
+  var TYPE_COLORS = { pull: '#ff6b1a', push: '#38bdf8', power: '#a78bfa', rest: '#22c55e' };
+  var woColor = wo.isRest ? 'var(--green)' : (TYPE_COLORS[wType] || 'var(--fire)');
+  var woVal = wo.isRest ? '🌿' : (wo.done + '<span style="font-size:.65rem;color:var(--sub)">/' + wo.total + '</span>');
+  var setsColor = sp.total > 0 ? (sp.done >= sp.total ? 'var(--green)' : '#ff6b1a') : 'var(--sub)';
+  var setsVal = sp.isRest ? '—' : (sp.done + '<span style="font-size:.65rem;color:var(--sub)">/' + sp.total + '</span>');
+  
+  var statChips = document.querySelectorAll('.stat-chip');
+  // Find the workout chip (usually 3rd chip - index 2)
+  if (statChips[2]) {
+    var val = statChips[2].querySelector('.stat-val');
+    if (val) {
+      val.style.color = woColor;
+      val.innerHTML = woVal;
+    }
+  }
+  // Find the sets chip (usually 6th chip - index 5)
+  if (statChips[5]) {
+    var setVal = statChips[5].querySelector('.stat-val');
+    if (setVal) {
+      setVal.style.color = setsColor;
+      setVal.innerHTML = setsVal;
+    }
+  }
+}
+
+function updateWorkoutHeaderCalories(dayName) {
+  // Update calories display in workout header
+  if (!dayName) dayName = todayDay();
+  var caloriesBurned = getTodayCaloriesBurned(dayName);
+  var calDisplay = caloriesBurned.done + '<span style="font-size:.75rem;color:var(--sub)">/' + caloriesBurned.total + '</span>';
+  var headerRight = document.querySelector('.wk-header-right');
+  if (headerRight) {
+    var calDiv = headerRight.querySelector('[style*="text-align:right"]');
+    if (calDiv) {
+      calDiv.innerHTML = '<div style="font-size:12px; opacity:0.7;">CALORIES</div><div style="font-weight:bold; color:var(--fire);">🔥 ' + calDisplay + ' cal</div>';
+    }
+  }
 }
 
 function weekStripHTML() {
@@ -451,32 +830,62 @@ function renderHome() {
     var d = today();
     var dayNum = getDayNum();
     var w = DB.getWater(d);
-    var weights = DB.weights();
+    var goal = p.waterGoal || 10;
+    var ML = 250;
+    var curL = (w * ML / 1000).toFixed(2);
+    var weights = DB.weights().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
     var lastWt = weights.length ? weights[weights.length - 1].kg : null;
+    var prevWt = weights.length > 1 ? weights[weights.length - 2].kg : null;
+    var wtDelta = (lastWt && prevWt) ? (lastWt - prevWt).toFixed(1) : null;
+    var wtDeltaStr = wtDelta ? (parseFloat(wtDelta) > 0 ? '+' + wtDelta : wtDelta) + ' kg' : '';
+    var wtDeltaColor = wtDelta && parseFloat(wtDelta) <= 0 ? 'var(--green)' : 'var(--red)';
+
+    // BMI calculation
+    var h_cm = parseFloat(p.height || 0);
+    var bmi = (h_cm > 0 && lastWt) ? (lastWt / Math.pow(h_cm / 100, 2)).toFixed(1) : null;
+    var bmiColor = bmi ? (bmi < 18.5 ? 'var(--blue)' : bmi < 25 ? 'var(--green)' : bmi < 30 ? 'var(--gold)' : 'var(--red)') : 'var(--sub)';
+
+    // Streak
+    var streak = calcStreak();
 
     var pct = Math.round((dayNum / 90) * 100);
     var wo = getTodayWorkoutProgress();
+    var sp = getTodaySetsProgress();
     var ms = getTodayMealSupplementProgress();
 
     var wType = todayWorkoutType();
     var TYPE_COLORS = { pull: '#ff6b1a', push: '#38bdf8', power: '#a78bfa', rest: '#22c55e' };
+    var TYPE_LABELS = { pull: '💪 PULL DAY', push: '🏋️ PUSH DAY', power: '⚡ POWER DAY', rest: '🌿 REST DAY' };
     var woColor = wo.isRest ? 'var(--green)' : (TYPE_COLORS[wType] || 'var(--fire)');
     var woVal = wo.isRest ? '🌿' : (wo.done + '<span style="font-size:.65rem;color:var(--sub)">/' + wo.total + '</span>');
     var woLabel = wo.isRest ? 'REST DAY' : '🏋️ WORKOUT';
 
     var isChallengeActive = dayNum > 0;
     var pct = isChallengeActive ? Math.round((dayNum / 90) * 100) : 0;
+    var daysLeft = Math.max(0, 90 - dayNum);
 
     var mealPct = ms.totalMeals > 0 ? Math.round((ms.meals / ms.totalMeals) * 100) : 0;
     var mealColor = mealPct >= 100 ? 'var(--green)' : mealPct > 0 ? 'var(--gold)' : 'var(--sub)';
     var suppPct = ms.totalSupp > 0 ? Math.round((ms.supp / ms.totalSupp) * 100) : 0;
     var suppColor = suppPct >= 100 ? 'var(--green)' : suppPct > 0 ? '#a78bfa' : 'var(--sub)';
 
-    var notifAlert = "";
+    var setsPct = sp.total > 0 ? Math.round((sp.done / sp.total) * 100) : 0;
+    var setsColor = setsPct >= 100 ? 'var(--green)' : setsPct > 0 ? '#ff6b1a' : 'var(--sub)';
+    var setsVal = sp.isRest ? '—' : (sp.done + '<span style="font-size:.65rem;color:var(--sub)">/' + sp.total + '</span>');
+
+    // Daily motivation (cycle by day number or date)
+    var motIdx = dayNum > 0 ? (dayNum - 1) % DAILY_MOTIVATIONS.length : (new Date().getDate() % DAILY_MOTIVATIONS.length);
+    var motivation = DAILY_MOTIVATIONS[motIdx] || DAILY_MOTIVATIONS[0];
+
+    // Workout type pill color
+    var wTypeColor = TYPE_COLORS[wType] || '#555';
+    var wTypeLabel = TYPE_LABELS[wType] || wType.toUpperCase();
+
+    var notifAlert = '';
     if (window.Notification && Notification.permission !== 'granted') {
       notifAlert = '<div onclick="requestNotifPermission()" class="haptic-press" style="margin:16px 16px 24px 16px;background:rgba(255,107,26,0.15);border:1px dashed var(--fire);border-radius:12px;padding:12px;text-align:center;cursor:pointer;">' +
         '<div style="font-size:.7rem;font-weight:700;color:var(--fire);letter-spacing:1px;text-transform:uppercase;">🔔 ENABLE STRICT REMINDERS</div>' +
-        '<div style="font-size:.6rem;color:var(--sub);margin-top:2px;">Get alerts for meals, water & weight logs</div>' +
+        '<div style="font-size:.6rem;color:var(--sub);margin-top:2px;">Get alerts for meals, water &amp; weight logs</div>' +
         '</div>';
     }
 
@@ -486,6 +895,8 @@ function renderHome() {
 
     document.getElementById('page-home').innerHTML =
       notifAlert +
+
+      // Challenge Ring Card
       '<div class="challenge-ring-card tilt-card ' + hudClass + '">' +
       '<svg class="ring-svg" width="70" height="70" viewBox="0 0 72 72">' +
       '<circle cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="5"/>' +
@@ -496,8 +907,11 @@ function renderHome() {
       '</svg>' +
       '<div class="ring-info">' +
       (isChallengeActive ?
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
         '<div class="ring-day-num">DAY ' + dayNum + '</div>' +
-        '<div class="ring-day-of">STILL GOING STRONG</div>' +
+        '<span style="font-size:.55rem;font-weight:900;padding:3px 8px;border-radius:20px;background:' + wTypeColor + '22;color:' + wTypeColor + ';border:1px solid ' + wTypeColor + '44;letter-spacing:1px;">' + wTypeLabel + '</span>' +
+        '</div>' +
+        (streak > 1 ? '<div style="font-size:.6rem;color:var(--gold);letter-spacing:1px;margin:2px 0;">🔥 ' + streak + '-DAY STREAK</div>' : '<div class="ring-day-of">' + daysLeft + ' DAYS TO GO</div>') +
         '<div class="ring-progress-bar"><div class="ring-progress-fill" style="width:' + pct + '%"></div></div>' +
         '<div class="challenge-actions">' +
         '<button class="challenge-btn restart-btn" onclick="event.stopPropagation();restartChallenge()">🔄 RESTART</button>' +
@@ -512,26 +926,51 @@ function renderHome() {
       ) +
       '</div>' +
       '</div>' +
+
+      // Daily Motivation Card
+      '<div class="motivation-card tilt-card" style="margin:4px 16px 8px;">' +
+      '<div style="display:flex;gap:10px;align-items:flex-start;">' +
+      '<div class="mot-icon">⚡</div>' +
+      '<div class="mot-quote">' + motivation + '</div>' +
+      '</div>' +
+      '</div>' +
+
+      // Quick Stats Chips
       '<div class="quick-stats">' +
+      // Water chip — shows glasses + liters
       '<div class="stat-chip tilt-card" onclick="quickWaterAdd()">' +
-      '<div class="stat-val" style="color:var(--blue)">' + w + '<span style="font-size:.65rem">/' + (p.waterGoal || 10) + '</span></div>' +
+      '<div class="stat-val" style="color:var(--blue)">' + w + '<span style="font-size:.65rem">/' + goal + '</span></div>' +
+      '<div class="stat-sub" style="color:var(--blue);">' + curL + ' L</div>' +
       '<div class="stat-label">💧 WATER</div>' +
       '</div>' +
+      // Weight chip — shows kg + delta + BMI
       '<div class="stat-chip tilt-card" onclick="editWeight()">' +
-      '<div class="stat-val" style="color:var(--gold)">' + (lastWt || '---') + '</div>' +
+      '<div class="stat-val" style="color:var(--gold)">' + (lastWt || '<span style="font-size:.8rem;color:var(--sub)">TAP</span>') + '</div>' +
+      '<div class="stat-sub">' +
+      (wtDeltaStr ? '<div style="color:' + wtDeltaColor + ';">' + wtDeltaStr + '</div>' : '') +
+      (bmi ? '<div style="color:' + bmiColor + ';">BMI ' + bmi + '</div>' : '') +
+      '</div>' +
       '<div class="stat-label">⚖️ KG</div>' +
       '</div>' +
+      // Workout chip
       '<div class="stat-chip tilt-card" onclick="goPage(\'workout\')">' +
       '<div class="stat-val" style="color:' + woColor + '">' + woVal + '</div>' +
       '<div class="stat-label">' + woLabel + '</div>' +
       '</div>' +
+      // Meals chip
       '<div class="stat-chip tilt-card" onclick="goPage(\'diet\')">' +
       '<div class="stat-val" style="color:' + mealColor + '">' + ms.meals + '<span style="font-size:.65rem;color:var(--sub)">/' + ms.totalMeals + '</span></div>' +
       '<div class="stat-label">🍱 MEALS</div>' +
       '</div>' +
+      // Supps chip
       '<div class="stat-chip tilt-card" onclick="goPage(\'diet\')">' +
       '<div class="stat-val" style="color:' + suppColor + '">' + ms.supp + '<span style="font-size:.65rem;color:var(--sub)">/' + ms.totalSupp + '</span></div>' +
       '<div class="stat-label">🌿 SUPPS</div>' +
+      '</div>' +
+      // Sets chip
+      '<div class="stat-chip tilt-card" onclick="goPage(\'workout\')">' +
+      '<div class="stat-val" style="color:' + setsColor + '">' + setsVal + '</div>' +
+      '<div class="stat-label">💪 SETS</div>' +
       '</div>' +
       '</div>' +
 
@@ -543,10 +982,11 @@ function renderHome() {
       scheduleHTML() +
       '</div>';
   } catch (err) {
-    console.error("[FitOS] renderHome Error:", err);
+    console.error('[FitOS] renderHome Error:', err);
     document.getElementById('page-home').innerHTML = '<div style="padding:40px;text-align:center;color:var(--fire);font-weight:700;">⚠ LOADING ERROR<br><div style="font-size:.7rem;font-weight:400;color:var(--sub);margin-top:10px;">Please hard refresh (Ctrl+F5) to fix cache. Details: ' + err.message + '</div></div>';
   }
 }
+
 
 function scheduleHTML() {
   var mealData = DB.getMeal(today());
@@ -655,7 +1095,7 @@ function getMetabolicAdaptabilityScore() {
   var meals = DB.getMeal(d);
   var mealsDone = 0;
   // Account for actual meals only
-  var targetMeals = ['pregym', 'lunch', 'dinner'];
+  var targetMeals = ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'];
   targetMeals.forEach(function (m) { if (meals[m] === true) mealsDone++; });
   var mealScore = (mealsDone / targetMeals.length) * 100;
 
@@ -832,15 +1272,22 @@ function quickWaterAdd() {
   var t = today();
   var cur = DB.getWater(t);
   var newVal = cur + 1;
+  var p = DB.profile();
+  var goal = p.waterGoal || 10;
+  var ML = 250;
+  var newL = (newVal * ML / 1000).toFixed(2);
   DB.setWater(t, newVal);
-  showToast('💧 Glass ' + newVal + ' logged!');
+  var pct = Math.min(Math.round((newVal / goal) * 100), 100);
+  showToast('💧 Glass ' + newVal + ' / ' + goal + '  (' + newL + ' L)  ' + pct + '%', 2500, 'info');
 
   // Surgical Update
   if (currentPage === 'home') {
     var chips = document.querySelectorAll('.stat-chip');
     if (chips[0]) {
-      var p = DB.profile();
-      chips[0].querySelector('.stat-val').innerHTML = newVal + '<span style="font-size:.65rem">/' + (p.waterGoal || 10) + '</span>';
+      var goalL = (goal * ML / 1000).toFixed(1);
+      chips[0].querySelector('.stat-val').innerHTML = newVal + '<span style="font-size:.65rem">/' + goal + '</span>';
+      var sub = chips[0].querySelector('.stat-sub');
+      if (sub) sub.innerHTML = newL + ' L';
     }
   }
 }
@@ -913,10 +1360,10 @@ function renderWorkout(day) {
 
   document.getElementById('page-workout').innerHTML =
     '<div class="day-tabs">' + tabsHtml + '</div>' +
-    (wType === 'rest' ? renderRestDay() : renderWorkoutDay(dStr, wo, wkData, isDone));
+    (wType === 'rest' ? renderRestDay() : renderWorkoutDay(day, dStr, wo, wkData, isDone));
 }
 
-function renderWorkoutDay(dStr, wo, wkData, isDone) {
+function renderWorkoutDay(day, dStr, wo, wkData, isDone) {
   var exData = wkData.exercises || {};
   var groupsHtml = '';
 
@@ -926,16 +1373,42 @@ function renderWorkoutDay(dStr, wo, wkData, isDone) {
       var done = ed.done || false;
       var badge = ex.time ? ex.time : (ex.sets + 'x' + (ex.reps || '?'));
       var setsHtml = '';
+      
+      // Auto-suggestion logic
+      var suggestedWeight = '';
+      if (ex.logWeight !== false && !ex.time) {
+        var prevWeights = DB.weights().filter(w => w.exId === ex.id);
+        if (prevWeights.length > 0) {
+          var lastW = prevWeights[prevWeights.length-1].kg;
+          var sug = (lastW * 1.025).toFixed(1); // 2.5% progression
+          suggestedWeight = '<div class="suggested-weight">NEXT GOAL: ' + sug + 'kg</div>';
+        }
+      }
+
       if (ex.sets > 0) {
         for (var s = 1; s <= ex.sets; s++) {
           var sw = (ed.setWeights || {})[s] || '';
+          var sr = (ed.setRpes || {})[s] || '';
           var isSetDone = (ed.setDone || {})[s] || false;
           var showWeight = ex.logWeight !== false;
+
+          var inputs = showWeight ? 
+            '<div class="set-inputs">' +
+              '<div class="mini-input-wrap">' +
+                '<div class="mini-label">KG</div>' +
+                '<input class="mini-input" type="number" step="0.5" value="' + sw + '" onchange="saveSetWeight(\'' + dStr + '\',\'' + ex.id + '\',' + s + ',this.value)" placeholder="-"/>' +
+              '</div>' +
+              '<div class="mini-input-wrap">' +
+                '<div class="mini-label">RPE</div>' +
+                '<input class="mini-input rpe-input" type="number" min="1" max="10" value="' + sr + '" onchange="saveSetRpe(\'' + dStr + '\',\'' + ex.id + '\',' + s + ',this.value)" placeholder="-"/>' +
+              '</div>' +
+            '</div>' : '';
 
           setsHtml += '<div class="set-row">' +
             '<div class="set-check' + (isSetDone ? ' done' : '') + '" id="chk-' + ex.id + '-' + s + '" onclick="event.stopPropagation();toggleSetDone(\'' + dStr + '\',\'' + ex.id + '\',' + s + ')">✓</div>' +
             '<div class="set-num">SET ' + s + '</div>' +
-            '<div class="set-reps">' + (ex.reps ? ex.reps + ' REPS' : ex.time) + '</div>' +
+            '<div class="set-reps">' + (ex.reps ? ex.reps + ' REPS' : ex.time) + (suggestedWeight && s===1 ? suggestedWeight : '') + '</div>' +
+            inputs +
             '</div>';
         }
       }
@@ -947,6 +1420,7 @@ function renderWorkoutDay(dStr, wo, wkData, isDone) {
         '</div>' +
         '<div class="ex-body" id="body-' + dStr + '-' + ex.id + '">' +
         '<img data-src="' + getExerciseImage(ex.name) + '" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="workout-img" loading="lazy" />' +
+        '<div class="ex-cue">⚡ CUE: ' + getExerciseCue(ex.name) + '</div>' +
         setsHtml +
         '</div>' +
         '</div>';
@@ -954,8 +1428,13 @@ function renderWorkoutDay(dStr, wo, wkData, isDone) {
     groupsHtml += '<div class="muscle-group"><div class="muscle-label">' + group.icon + ' ' + group.name + '</div>' + exHtml + '</div>';
   });
 
+  var caloriesBurned = getTodayCaloriesBurned(day);
+  var calDisplay = caloriesBurned.done + '<span style="font-size:.75rem;color:var(--sub)">/' + caloriesBurned.total + '</span>';
   return '<div class="wk-header">' +
     '<div class="wk-header-left"><div class="wk-type" style="color:var(--fire)">' + wo.short + '</div><div class="wk-name">' + wo.label + '</div></div>' +
+    '<div class="wk-header-right" style="display:flex; gap:15px; align-items:center; font-size:14px;">' +
+    '<div style="text-align:right;"><div style="font-size:12px; opacity:0.7;">CALORIES</div><div style="font-weight:bold; color:var(--fire);">🔥 ' + calDisplay + ' cal</div></div>' +
+    '</div>' +
     '</div>' + groupsHtml;
 }
 
@@ -1007,6 +1486,25 @@ function toggleSetDone(dStr, exId, setNum) {
   var nowSetDone = !setDone[setNum];
   setDone[setNum] = nowSetDone;
 
+  if (nowSetDone) {
+    var sw = (exData.setWeights || {})[setNum] || 0;
+    if (sw > 0) {
+      DB.addExWeight(exId, sw);
+      // Calculate 1RM and store if reps exist
+      var workouts = WORKOUTS[getWorkoutType(selectedWorkoutDay)];
+      var exObj = null;
+      workouts.groups.forEach(function (g) {
+        g.exercises.forEach(function (e) { if (e.id === exId) exObj = e; });
+      });
+      if (exObj && exObj.reps) {
+        var onerm = NeuralCore.calc1RM(sw, exObj.reps);
+        var exOnerms = DB.getAdvanced('exOnerms') || {};
+        exOnerms[exId] = onerm;
+        DB.setAdvanced('exOnerms', exOnerms);
+      }
+    }
+  }
+
   DB.setExercise(dStr, exId, { setDone: setDone });
 
   // Update set UI
@@ -1046,9 +1544,37 @@ function toggleSetDone(dStr, exId, setNum) {
     }
   }
 
-  if (allDone) showToast('🔥 Exercise Complete!');
+  if (allDone) {
+    showToast('🔥 Exercise Complete!');
+    // Update home screen workout card in real-time
+    setTimeout(function() {
+      updateHomeWorkoutCard();
+      // Also update calorie display in workout header
+      updateWorkoutHeaderCalories(selectedWorkoutDay);
+    }, 100);
+  }
 }
 
+
+function saveSetRpe(dStr, exId, setNum, val) {
+  var wkData = DB.getWorkout(dStr);
+  var exData = (wkData.exercises || {})[exId] || {};
+  var setRpes = exData.setRpes || {};
+  setRpes[setNum] = parseInt(val) || 0;
+  DB.setExercise(dStr, exId, { setRpes: setRpes });
+}
+
+function getExerciseCue(name) {
+  var cues = {
+    "Lat Pulldown": "Pull with elbows, not hands. Squeeze shoulder blades.",
+    "Flat Bench Press": "Keep shoulder blades retracted. Drive feet into floor.",
+    "Barbell Back Squat": "Brace core tight. Descend until thighs are parallel.",
+    "Barbell Curl": "Keep elbows pinned to sides. Full range of motion.",
+    "Overhead Shoulder Press": "Push head through window at the top. Squeeze glutes.",
+    "Treadmill Incline Walk": "Maintain upright posture. Don't hold onto rails."
+  };
+  return cues[name] || "Focus on mind-muscle connection and controlled tempo.";
+}
 
 function saveSetWeight(dStr, exId, setNum, val) {
   var wkData = DB.getWorkout(dStr);
@@ -1078,12 +1604,14 @@ function renderDiet() {
   var dm = DAILY_MACROS[dayD] || {};
 
   var mealConfigs = {
-    lunch: dm.lunch || MEAL_CONFIG['lunch'],
     pregym: dm.pregym || MEAL_CONFIG['pregym'],
-    dinner: dm.dinner || MEAL_CONFIG['dinner']
+    postworkout: dm.postworkout || MEAL_CONFIG['postworkout'],
+    lunch: dm.lunch || MEAL_CONFIG['lunch'],
+    dinner: dm.dinner || MEAL_CONFIG['dinner'],
+    supp_snack: dm.supp_snack || MEAL_CONFIG['supp_snack']
   };
 
-  ['lunch', 'pregym', 'dinner'].forEach(function (id) {
+  ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'].forEach(function (id) {
     var c = mealConfigs[id];
     if (c && mealData[id] === true) {
       totalCal += c.cal || 0; totalPro += c.protein || 0; totalCarb += c.carbs || 0; totalFat += c.fat || 0;
@@ -1091,24 +1619,24 @@ function renderDiet() {
   });
 
   var TL = [
-    { t: '2:30 AM', icon: '🏁', label: 'JOB ENDS', desc: 'Transition to Pre-Workout Phase' },
-    { t: '3:00 AM', icon: '🍌', label: 'PRE-GYM MEAL', desc: '½ Banana + Black Coffee', id: 'pregym', type: 'meal' },
-    { t: '3:15 AM', icon: '💊', label: 'Dr. Morepen Fat Burner', desc: 'Metabolism Support (Gym Days)', id: 'supp_fatburner', type: 'supp' },
-    { t: '4:00 AM', icon: '🏋️', label: 'GYM TRAINING', desc: '4:00 AM – 6:00 AM · High-Intensity at Fit Master Gym' },
-    { t: '6:15 AM', icon: '😴', label: 'RECOVERY SLEEP', desc: 'Deep 6-Hour Recovery Window' },
-    { t: '12:00 PM', icon: '⏰', label: 'WAKE UP', desc: '-' },
-    { t: '12:10 PM', icon: '🌿', label: 'Jeera/Saunf/Ajwain + Lemon', desc: 'Fasting detox drink', id: 'supp_jeera1', type: 'supp' },
-    { t: '12:30 PM', icon: '🍎', label: 'Apple Cider Vinegar', desc: '1 tbsp in warm water', id: 'supp_acv1', type: 'supp' },
-    { t: '1:00 PM', icon: '🌾', label: 'Isabgol', desc: '1 tsp in water (Fiber)', id: 'supp_isab1', type: 'supp' },
-    { t: '1:15 PM', icon: '🍱', label: 'MAIN LUNCH', desc: 'High Protein / High Fiber Meal', id: 'lunch', type: 'meal' },
-    { t: '1:30 PM', icon: '💊', label: 'Centrum Men', desc: 'Daily Multivitamin', id: 'supp_centrum', type: 'supp' },
-    { t: '3:10 PM', icon: '🌿', label: 'Jeera/Saunf/Ajwain + Lemon', desc: 'Fasting detox drink', id: 'supp_jeera2', type: 'supp' },
-    { t: '3:30 PM', icon: '🍎', label: 'Apple Cider Vinegar', desc: '1 tbsp in warm water', id: 'supp_acv2', type: 'supp' },
-    { t: '4:00 PM', icon: '🌾', label: 'Isabgol', desc: '1 tsp in water (Fiber)', id: 'supp_isab2', type: 'supp' },
-    { t: '4:30 PM', icon: '💊', label: 'T-Slim Tablet', desc: 'Garcinia + L-Carnitine', id: 'supp_tslim', type: 'supp' },
-    { t: '5:00 PM', icon: '🍽️', label: 'DINNER', desc: 'Lean Fuel Before Work Shift', id: 'dinner', type: 'meal' },
-    { t: '6:30 PM', icon: '🏢', label: 'JOB STARTS', desc: 'Official Shift Begins' },
-    { t: '11:59 PM', icon: '🍵', label: 'Green Tea + Lemon', desc: 'Metabolism Boost', id: 'supp_gt', type: 'supp' }
+    { t: '2:30 AM', icon: '🏁', label: 'JOB ENDS', desc: 'Job finished — hydrate with 1 glass lukewarm water' },
+    { t: '2:45 AM', icon: '💊', label: 'Dr. Morepen Fat Burner', desc: 'Take with half banana — not on empty stomach', id: 'supp_fatburner', type: 'supp' },
+    { t: '3:00 AM', icon: '🍌', label: 'PRE-WORKOUT MEAL', desc: '1 medium banana + black coffee (no sugar, no milk)', id: 'pregym', type: 'meal' },
+    { t: '4:00 AM', icon: '🏋️', label: 'GYM TRAINING', desc: 'High intensity training (1 hr)' },
+    { t: '5:00 AM', icon: '🚶', label: 'TREADMILL WALK', desc: '1 hr walk at 4.5–5 km/hr' },
+    { t: '6:00 AM', icon: '🥛', label: 'POST-WORKOUT RECOVERY', desc: '200ml warm low-fat milk + 30g roasted chana', id: 'postworkout', type: 'meal' },
+    { t: '6:15 AM', icon: '😴', label: 'RECOVERY SLEEP', desc: '6 hours of recovery sleep' },
+    { t: '12:00 PM', icon: '⏰', label: 'WAKE UP', desc: 'Start the day with a detox drink' },
+    { t: '12:05 PM', icon: '🌿', label: 'DETOX DRINK', desc: 'Warm water with lemon, jeera, saunf, and ajwain', id: 'supp_jeera1', type: 'supp' },
+    { t: '12:15 PM', icon: '💊', label: 'T-Slim Tablet', desc: 'Take with water before lunch', id: 'supp_tslim', type: 'supp' },
+    { t: '12:15 PM', icon: '💊', label: 'Centrum Men Multivitamin', desc: 'Take with lunch', id: 'supp_centrum', type: 'supp' },
+    { t: '1:00 PM', icon: '🍱', label: 'MAIN LUNCH', desc: 'Dal + cooked soya chunks + salad + roti', id: 'lunch', type: 'meal' },
+    { t: '2:30 PM', icon: '🍎', label: 'Apple Cider Vinegar', desc: '1 tbsp ACV in warm water', id: 'supp_acv1', type: 'supp' },
+    { t: '4:00 PM', icon: '🌾', label: 'Isabgol', desc: '1 tsp in lukewarm water before dinner', id: 'supp_isab2', type: 'supp' },
+    { t: '5:00 PM', icon: '🍽️', label: 'DINNER', desc: 'Soya chunks + veggies, no roti', id: 'dinner', type: 'meal' },
+    { t: '6:30 PM', icon: '🏢', label: 'JOB STARTS', desc: 'Keep a 1 litre water bottle with you' },
+    { t: '9:30 PM', icon: '🥜', label: 'OFFICE BREAK SNACK', desc: '30g roasted chana or 20g makhana', id: 'supp_snack', type: 'supp' },
+    { t: '12:00 AM', icon: '🍵', label: 'Green Tea', desc: 'Plain, no sugar', id: 'supp_gt', type: 'supp' }
   ];
 
   var timelineHtml = '';
@@ -1185,7 +1713,7 @@ function renderDiet() {
   if (typeof DAILY_MACROS !== 'undefined' && DAILY_MACROS[dayD]) {
     var dm = DAILY_MACROS[dayD];
     var g = { cal: 0, protein: 0, carbs: 0, fat: 0 };
-    ['pregym', 'lunch', 'dinner'].forEach(function (id) {
+    ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'].forEach(function (id) {
       if (dm[id]) {
         g.cal += (dm[id].cal || 0);
         g.protein += (dm[id].protein || 0);
@@ -1206,41 +1734,54 @@ function renderDiet() {
   for (var di = 0; di < days.length; di++) {
     var dayK = days[di];
     var dm = WEEKLY_MEALS[dayK] || {};
-    var preG = dm.pregym || 'Half Banana + 1 Glass Milk';
-    tableRows += '<tr><td>' + dayK.toUpperCase() + '</td><td>' + preG + '</td><td>' + (dm.lunch || '---') + '</td><td>' + (dm.dinner || '---') + '</td></tr>';
+    var preG = dm.pregym || '---';
+    var postW = (dm.postworkout || '---').replace(/<strong>.*?<\/strong>/g, '').trim();
+    var lunchText = (dm.lunch || '---').replace(/<strong>.*?<\/strong>/g, '').trim();
+    var dinnerText = (dm.dinner || '---').replace(/<strong>.*?<\/strong>/g, '').trim();
+    var snackText = (dm.supp_snack || '---');
+    
+    tableRows += '<tr><td>' + dayK.toUpperCase() + '</td><td>' + preG + '</td><td>' + postW + '</td><td>' + lunchText + '</td><td>' + dinnerText + '</td><td>' + snackText + '</td></tr>';
   }
 
   document.getElementById('page-diet').innerHTML =
+    // Completion summary banner
+    (function() {
+      var MEAL_IDS = ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'];
+      var SUPP_IDS = ['supp_fatburner', 'supp_jeera1', 'supp_tslim', 'supp_centrum', 'supp_acv1', 'supp_isab2', 'supp_gt'];
+      var mDone = 0, sDone = 0;
+      MEAL_IDS.forEach(function(id) { if (mealData[id] === true) mDone++; });
+      SUPP_IDS.forEach(function(id) { if (mealData[id] === true) sDone++; });
+      var allMDone = mDone >= MEAL_IDS.length; var allSDone = sDone >= SUPP_IDS.length;
+      var bannerColor = (allMDone && allSDone) ? 'var(--green)' : (mDone > 0 || sDone > 0) ? 'var(--gold)' : 'var(--sub)';
+      var emoji = (allMDone && allSDone) ? '🏆' : (mDone > 0 || sDone > 0) ? '⚡' : '🎯';
+      return '<div style="margin:8px 16px 4px;padding:10px 14px;background:' + (allMDone && allSDone ? 'rgba(34,197,94,0.1)' : 'rgba(245,197,23,0.08)') + ';border:1px solid ' + bannerColor + '44;border-radius:12px;display:flex;align-items:center;justify-content:space-between;">' +
+        '<span style="font-size:.65rem;font-weight:900;color:' + bannerColor + ';letter-spacing:1px;">' + emoji + ' MEALS: ' + mDone + '/' + MEAL_IDS.length + '</span>' +
+        '<span style="font-size:.65rem;font-weight:900;color:' + bannerColor + ';letter-spacing:1px;">SUPPS: ' + sDone + '/' + SUPP_IDS.length + '</span>' +
+        '<span style="font-size:.65rem;font-weight:700;color:' + (totalCal > 0 ? 'var(--fire)' : 'var(--sub)') + ';">🔥 ' + totalCal + ' KCAL</span>' +
+        '</div>';
+    })() +
     '<div class="macro-bar-card tilt-card">' +
-    '<div class="macro-chart-box">' +
-    '<div class="macro-donut" style="--p:' + pctCal + '%">' +
-    '<div class="macro-donut-content">' +
-    '<div class="macro-donut-val">' + Math.round(pctCal) + '%</div>' +
-    '<div class="macro-donut-lbl">KCAL</div>' +
-    '</div>' +
-    '</div>' +
-    '</div>' +
-    '<div class="macro-stats">' +
+    '<div class="macro-stats" style="width:100%;">' +
     '<div class="macro-item">' +
-    '<div class="macro-item-top"><span class="macro-item-lbl">Calories</span><span class="macro-item-val">' + totalCal + '<span> / ' + goals.cal + '</span></span></div>' +
+    '<div class="macro-item-top"><span class="macro-item-lbl">Calories</span><span class="macro-item-val">' + totalCal + '<span> / ' + goals.cal + '</span></span><span style="font-size:.6rem;color:var(--fire);font-weight:800;">' + Math.round(pctCal) + '%</span></div>' +
     '<div class="macro-item-bar"><div class="macro-item-fill" style="width:' + pctCal + '%; background:var(--fire);"></div></div>' +
     '</div>' +
     '<div class="macro-item">' +
-    '<div class="macro-item-top"><span class="macro-item-lbl">Protein</span><span class="macro-item-val">' + totalPro + '<span> / ' + goals.protein + 'g</span></span></div>' +
+    '<div class="macro-item-top"><span class="macro-item-lbl">Protein</span><span class="macro-item-val">' + totalPro + '<span> / ' + goals.protein + 'g</span></span><span style="font-size:.6rem;color:var(--gold);font-weight:800;">' + Math.round(pctPro) + '%</span></div>' +
     '<div class="macro-item-bar"><div class="macro-item-fill" style="width:' + pctPro + '%; background:var(--gold);"></div></div>' +
     '</div>' +
     '<div class="macro-item">' +
-    '<div class="macro-item-top"><span class="macro-item-lbl">Carbs</span><span class="macro-item-val">' + totalCarb + '<span> / ' + goals.carbs + 'g</span></span></div>' +
+    '<div class="macro-item-top"><span class="macro-item-lbl">Carbs</span><span class="macro-item-val">' + totalCarb + '<span> / ' + goals.carbs + 'g</span></span><span style="font-size:.6rem;color:var(--green);font-weight:800;">' + Math.round(pctCarb) + '%</span></div>' +
     '<div class="macro-item-bar"><div class="macro-item-fill" style="width:' + pctCarb + '%; background:var(--green);"></div></div>' +
     '</div>' +
     '<div class="macro-item">' +
-    '<div class="macro-item-top"><span class="macro-item-lbl">Fat</span><span class="macro-item-val">' + totalFat + '<span> / ' + goals.fat + 'g</span></span></div>' +
+    '<div class="macro-item-top"><span class="macro-item-lbl">Fat</span><span class="macro-item-val">' + totalFat + '<span> / ' + goals.fat + 'g</span></span><span style="font-size:.6rem;color:var(--blue);font-weight:800;">' + Math.round(pctFat) + '%</span></div>' +
     '<div class="macro-item-bar"><div class="macro-item-fill" style="width:' + pctFat + '%; background:var(--blue);"></div></div>' +
     '</div>' +
     '</div>' +
     '</div>' +
     '<div class="section"><div class="sec-h"><div class="sec-h-title">TODAY\'S DIET &amp; SUPPLEMENTS</div></div>' + timelineHtml + '</div>' +
-    '<div class="section" style="margin-top:12px;"><div class="sec-h"><div class="sec-h-title">WEEKLY MENU REF</div></div><div class="menu-ref-wrap"><table class="menu-table"><thead><tr><th>DAY</th><th>PRE-GYM</th><th>LUNCH + CURD</th><th>DINNER</th></tr></thead><tbody>' + tableRows + '</tbody></table></div></div>' +
+    '<div class="section" style="margin-top:12px;"><div class="sec-h"><div class="sec-h-title">WEEKLY MENU REF</div></div><div class="menu-ref-wrap"><table class="menu-table"><thead><tr><th>DAY</th><th>PRE-GYM</th><th>POST-WORKOUT</th><th>LUNCH</th><th>DINNER</th><th>OFFICE SNACK</th></tr></thead><tbody>' + tableRows + '</tbody></table></div></div>' +
     '<div style="padding:10px 0;font-size:.65rem;color:var(--sub);text-align:center;">Tap any item to mark complete</div>';
 }
 
@@ -1252,7 +1793,20 @@ function renderWater() {
   var cur = DB.getWater(t);
   var goal = DB.profile().waterGoal || 10;
   var pct = Math.min((cur / goal) * 100, 100) || 0;
+  var ML_PER_GLASS = 250; // 1 glass = 250ml
+  var curL = (cur * ML_PER_GLASS / 1000).toFixed(2);
+  var goalL = (goal * ML_PER_GLASS / 1000).toFixed(2);
 
+  // Hydration status
+  var hydPct = Math.min((cur / goal) * 100, 100) || 0;
+  var hydStatus, hydColor, hydEmoji;
+  if (hydPct >= 100) { hydStatus = 'CHAMPION HYDRATION'; hydColor = 'var(--green)'; hydEmoji = '🏆'; }
+  else if (hydPct >= 70) { hydStatus = 'WELL HYDRATED'; hydColor = 'var(--green)'; hydEmoji = '✅'; }
+  else if (hydPct >= 40) { hydStatus = 'NEEDS MORE WATER'; hydColor = 'var(--gold)'; hydEmoji = '⚠️'; }
+  else { hydStatus = 'DEHYDRATED'; hydColor = 'var(--red)'; hydEmoji = '🔴'; }
+
+  // 7-day average
+  var totalW7 = 0;
   var glassesHtml = '';
   for (var i = 1; i <= goal; i++) {
     var filled = i <= cur ? ' filled' : '';
@@ -1271,20 +1825,26 @@ function renderWater() {
 
   var chartHtml = chartData.map(function (item) {
     var c = DB.getWater(item.date);
+    totalW7 += c;
     var p = Math.min((c / goal) * 100, 100) || 0;
     var lbl = DAY_SHORT[item.dayIdx];
     var filled = c >= goal ? ' filled' : '';
-    return '<div class="chart-bar-wrap"><div class="chart-bar-val">' + c + '</div><div class="chart-bar' + filled + '" style="height:' + Math.max(p, 5) + '%;"></div><div class="chart-bar-lbl">' + lbl + '</div></div>';
+    var cL = (c * ML_PER_GLASS / 1000).toFixed(1);
+    return '<div class="chart-bar-wrap"><div class="chart-bar-val">' + c + '<div style="font-size:.45rem;color:var(--sub);">' + cL + 'L</div></div><div class="chart-bar' + filled + '" style="height:' + Math.max(p, 5) + '%;"></div><div class="chart-bar-lbl">' + lbl + '</div></div>';
   }).join('');
+  var avg7 = (totalW7 / 7).toFixed(1);
+  var avg7L = (parseFloat(avg7) * ML_PER_GLASS / 1000).toFixed(2);
 
   document.getElementById('page-water').innerHTML =
     '<div class="water-display tilt-card">' +
     '<div class="water-big-num">' + cur + '</div>' +
-    '<div class="water-goal-label">GLASSES TODAY (GOAL: ' + goal + ')</div>' +
+    '<div style="font-size:1.1rem; font-weight:700; color:var(--blue); letter-spacing:1px; margin-top:2px;">' + curL + ' L</div>' +
+    '<div style="font-size:.65rem;font-weight:900;color:' + hydColor + ';letter-spacing:2px;margin:4px 0 2px;">' + hydEmoji + ' ' + hydStatus + '</div>' +
+    '<div class="water-goal-label">GLASSES TODAY (GOAL: ' + goal + ' glasses / ' + goalL + ' L)</div>' +
     '<div class="water-bar"><div class="water-bar-fill" style="width:' + pct + '%"></div></div>' +
     '<div class="water-controls">' +
     '<button class="water-btn" onclick="DB.setWater(\'' + t + '\',' + (cur - 1) + '); renderWater();">-</button>' +
-    '<div class="water-val-display">' + Math.round(cur) + '</div>' +
+    '<div class="water-val-display">' + Math.round(cur) + ' <span style="font-size:.65rem;color:var(--sub);">' + curL + 'L</span></div>' +
     '<button class="water-btn" onclick="DB.setWater(\'' + t + '\',' + (cur + 1) + '); renderWater();">+</button>' +
     '</div>' +
     '</div>' +
@@ -1293,7 +1853,7 @@ function renderWater() {
     '<div class="glasses-grid">' + glassesHtml + '</div>' +
     '</div>' +
     '<div class="section" style="margin-top:12px;">' +
-    '<div class="sec-h"><div class="sec-h-title">📊 PAST 7 DAYS</div></div>' +
+    '<div class="sec-h"><div class="sec-h-title">📊 PAST 7 DAYS</div><div style="font-size:.6rem;color:var(--blue);margin-left:auto;font-weight:800;">AVG: ' + avg7 + ' glasses / ' + avg7L + ' L</div></div>' +
     '<div class="water-week-chart"><div class="chart-bars">' + chartHtml + '</div></div>' +
     '</div>';
 }
@@ -1378,6 +1938,45 @@ function generateWeightChartSVG(pts) {
   return svg;
 }
 
+function generateMuscleChartSVG() {
+  var labels = ["Back", "Biceps", "Chest", "Triceps", "Legs", "Abs", "Shoulders"];
+  var counts = { Back:0, Biceps:0, Chest:0, Triceps:0, Legs:0, Abs:0, Shoulders:0 };
+  
+  // Scraper through workout data for past 7 days
+  var data = DB._getData();
+  data.slice(-7).forEach(day => {
+    var exData = (day._rawWorkout || {}).exercises || {};
+    for (var id in exData) {
+      if (exData[id].done) {
+        // Map ID to group
+        if (id.startsWith('b')) counts.Back++;
+        else if (id.startsWith('bi')) counts.Biceps++;
+        else if (id.startsWith('ch')) counts.Chest++;
+        else if (id.startsWith('tr')) counts.Triceps++;
+        else if (id.startsWith('q') || id.startsWith('h')) counts.Legs++;
+        else if (id.startsWith('ab')) counts.Abs++;
+        else if (id.startsWith('sh')) counts.Shoulders++;
+      }
+    }
+  });
+
+  var max = Math.max.apply(null, Object.values(counts)) || 1;
+  var w = 340, h = 160, pad = 30;
+  var barW = (w - pad*2) / labels.length;
+
+  var bars = labels.map(function(l, i) {
+    var val = counts[l];
+    var barH = (val / max) * (h - pad*2);
+    var x = pad + i * barW;
+    var y = h - pad - barH;
+    return '<rect x="'+(x+5)+'" y="'+y+'" width="'+(barW-10)+'" height="'+barH+'" fill="var(--fire)" opacity="0.6" rx="4"/>' +
+           '<text x="'+(x+barW/2)+'" y="'+(h-10)+'" fill="var(--sub)" font-size="8" text-anchor="middle">'+l.toUpperCase()+'</text>' +
+           '<text x="'+(x+barW/2)+'" y="'+(y-5)+'" fill="var(--fire)" font-size="9" font-weight="700" text-anchor="middle">'+val+'</text>';
+  }).join('');
+
+  return '<svg viewBox="0 0 '+w+' '+h+'">'+bars+'</svg>';
+}
+
 function renderProgress() {
   var prof = DB.profile();
   var weights = DB.weights();
@@ -1401,47 +2000,121 @@ function renderProgress() {
   var lastWtObj = weights.length ? weights[weights.length - 1] : (prof.startWeight ? { kg: parseFloat(prof.startWeight) } : null);
   var firstWtObj = prof.startWeight ? { kg: parseFloat(prof.startWeight) } : (weights.length ? weights[0] : null);
 
-  var wRows = weights.slice(-15).reverse().map(function (w, i, arr) {
-    var prev = arr[i + 1];
-    var diffHtml = '';
-    if (prev) {
-      var d = w.kg - prev.kg;
-      if (d > 0) diffHtml = '<span class="wh-diff pos">▲ ' + d.toFixed(1) + '</span>';
-      else if (d < 0) diffHtml = '<span class="wh-diff neg">▼ ' + Math.abs(d).toFixed(1) + '</span>';
-      else diffHtml = '<span class="wh-diff" style="color:var(--sub)">—</span>';
-    }
-    var logTime = w.t ? (new Date(w.t).getHours() + ':' + String(new Date(w.t).getMinutes()).padStart(2, '0')) : '--:--';
-    return '<div class="wh-row"><div class="wh-date">' + formatDate(w.date) + ' <span style="font-size:.5rem;color:var(--sub2)">' + logTime + '</span></div><div style="flex:1;text-align:right;padding-right:16px;">' + diffHtml + '</div><div class="wh-kg">' + w.kg + ' KG</div></div>';
-  }).join('');
+  var weightPred30 = NeuralCore.predictWeight(30) || '---';
+  var weightPred60 = NeuralCore.predictWeight(60) || '---';
+  var weightPred90 = NeuralCore.predictWeight(90) || '---';
+  var isPlat = NeuralCore.isPlateau();
+  var recIndex = NeuralCore.getRecoveryIndex();
+
+  var onerms = DB.getAdvanced('exOnerms') || {};
+  var best1rm = 0;
+  for (var id in onerms) if (onerms[id] > best1rm) best1rm = onerms[id];
 
   var targetWt = parseFloat(prof.targetWeight || 0);
   var needsToLose = targetWt > 0 ? (lastWtObj ? (lastWtObj.kg - targetWt) : 0).toFixed(1) : '--';
   if (parseFloat(needsToLose) < 0) needsToLose = '0';
 
-  document.getElementById('page-progress').innerHTML =
-    '<div class="progress-stats" style="margin-top:12px; grid-template-columns: repeat(3, 1fr); gap: 10px;">' +
-    // Row 1: Weight focus
-    '<div class="prog-stat" onclick="editWeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (lastWtObj ? lastWtObj.kg : '--') + '</div><div class="prog-stat-lbl">CURRENT (KG)</div></div>' +
-    '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--blue);">' + (targetWt || '--') + '</div><div class="prog-stat-lbl">TARGET (KG)</div></div>' +
-    '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--red);">' + needsToLose + '</div><div class="prog-stat-lbl">NEEDS TO LOSE</div></div>' +
+  // Total lost since day 1
+  var totalLost = (firstWtObj && lastWtObj) ? (firstWtObj.kg - lastWtObj.kg).toFixed(1) : null;
+  var totalLostColor = totalLost && parseFloat(totalLost) > 0 ? 'var(--green)' : totalLost && parseFloat(totalLost) < 0 ? 'var(--red)' : 'var(--sub)';
+  var totalLostLabel = totalLost && parseFloat(totalLost) > 0 ? '↓ ' + totalLost + ' KG LOST' : totalLost && parseFloat(totalLost) < 0 ? '↑ ' + Math.abs(parseFloat(totalLost)) + ' KG GAINED' : 'NO CHANGE';
 
-    // Row 2: Profile focus
-    '<div class="prog-stat haptic-press" onclick="editHeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--green);">' + (prof.height || '--') + '</div><div class="prog-stat-lbl">HEIGHT (CM)</div></div>' +
-    '<div class="prog-stat haptic-press" onclick="editGender()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--purple); text-transform:uppercase; font-size:1.4rem;">' + (prof.gender || '--') + '</div><div class="prog-stat-lbl">GENDER</div></div>' +
-    '<div class="prog-stat haptic-press" onclick="editAge()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (prof.age || '--') + '</div><div class="prog-stat-lbl">AGE</div></div>' +
+  // Days remaining
+  var dayNum = getDayNum();
+  var daysLeft = Math.max(0, 90 - dayNum);
+  var streak = calcStreak();
+
+  document.getElementById('page-progress').innerHTML =
+    // 1. MAS Score card (filled async by renderHealthMetrics)
+    '<div id="bio-hud-container"></div>' +
+
+    // Total lost badge
+    (totalLost ? '<div style="margin:0 16px 4px;padding:10px 16px;background:' + (parseFloat(totalLost) > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') + ';border:1px solid ' + totalLostColor + '44;border-radius:12px;display:flex;align-items:center;justify-content:space-between;">' +
+      '<span style="font-size:.85rem;font-weight:900;color:' + totalLostColor + ';letter-spacing:1px;">' + totalLostLabel + '</span>' +
+      '<span style="font-size:.6rem;color:var(--sub);">DAY ' + dayNum + ' / 90  •  ' + daysLeft + ' TO GO</span>' +
+      '</div>' : '') +
+
+    // 2. Weight Progress - stats grid (now 8 cards: 3+3+2)
+    '<div class="section">' +
+      '<div class="sec-h"><div class="sec-h-title">⚖️ WEIGHT PROGRESS</div></div>' +
+      '<div class="progress-stats" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">' +
+        '<div class="prog-stat" onclick="editWeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (lastWtObj ? lastWtObj.kg : '--') + '</div><div class="prog-stat-lbl">CURRENT (KG)</div></div>' +
+        '<div class="prog-stat" onclick="editTarget()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--blue);">' + (targetWt || '--') + '</div><div class="prog-stat-lbl">TARGET (KG)</div></div>' +
+        '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--red);">' + needsToLose + '</div><div class="prog-stat-lbl">TO LOSE (KG)</div></div>' +
+        '<div class="prog-stat" onclick="editHeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--green);">' + (prof.height || '--') + '</div><div class="prog-stat-lbl">HEIGHT (CM)</div></div>' +
+        '<div class="prog-stat" onclick="editGender()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--purple); font-size:1rem;">' + (prof.gender || 'male').toUpperCase() + '</div><div class="prog-stat-lbl">GENDER</div></div>' +
+        '<div class="prog-stat" onclick="editAge()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (prof.age || '--') + '</div><div class="prog-stat-lbl">AGE</div></div>' +
+        '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--fire);">' + daysLeft + '</div><div class="prog-stat-lbl">🏁 DAYS LEFT</div></div>' +
+        '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--gold);">&#x1f525; ' + streak + '</div><div class="prog-stat-lbl">DAY STREAK</div></div>' +
+        '<div class="prog-stat"><div class="prog-stat-val" style="color:' + totalLostColor + '; font-size:1rem;">' + (totalLost ? (parseFloat(totalLost) > 0 ? '↓' : '↑') + Math.abs(parseFloat(totalLost)) + ' kg' : '--') + '</div><div class="prog-stat-lbl">📉 TOTAL LOST</div></div>' +
+      '</div>' +
     '</div>' +
 
-    '<div class="metrics-grid" id="adv-metrics"></div>' +
+    // 3. Body Metrics 16-card grid (BMI, Body Fat, etc.) - filled async
+    '<div id="adv-metrics" class="metrics-grid"></div>' +
 
+    // 4. AI Insights + Cycle Intelligence + Advanced Metrics 7D + Predictive - filled async
     '<div id="ai-insights-container"></div>' +
 
-    '<div id="bio-hud-container" style="margin:20px 0;"></div>' +
-
-    '<div class="weight-chart" style="margin:20px 16px; padding:18px 16px; background:linear-gradient(135deg, rgba(255,107,26,0.08), rgba(88,198,255,0.05)); border:1px solid rgba(255,107,26,0.2); border-radius:18px; backdrop-filter:blur(10px);">' +
-    '<div class="weight-chart-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:0.9rem; font-weight:900; letter-spacing:1px; color:var(--gold);">📊 WEIGHT TREND <button onclick="DB.exportData()" style="background:rgba(255,107,26,0.2); border:1px solid rgba(255,107,26,0.3); color:var(--gold); font-size:.65rem; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:\'Bebas Neue\',sans-serif; letter-spacing:1px; font-weight:700; transition:all 0.3s; hover:background:rgba(255,107,26,0.3);">⬇️ EXPORT JSON</button></div>' +
-    '<div style="position:relative; height:280px;">' +
-    generateWeightChartSVG(chartWeights) +
+    // 5. Neural Predictions (60/90 day)
+    '<div class="section">' +
+      '<div class="sec-h"><div class="sec-h-title">🧠 NEURAL PREDICTIONS</div></div>' +
+      '<div class="tilt-card" style="padding:15px; background:rgba(255,107,26,0.05); border:1px dashed var(--fire); border-radius:14px;">' +
+        '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
+          '<div><div style="font-size:0.5rem; color:var(--sub)">60 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--fire);">' + weightPred60 + ' kg</div></div>' +
+          '<div><div style="font-size:0.5rem; color:var(--sub)">90 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--gold);">' + weightPred90 + ' kg</div></div>' +
+          '<div style="text-align:right;"><div style="font-size:0.5rem; color:var(--sub)">TREND</div><div style="font-size:1.1rem; font-weight:700; color:var(--green);">' + (isPlat ? 'STALL' : 'LOSS') + '</div></div>' +
+        '</div>' +
+        '<div style="font-size:0.6rem; color:var(--sub2); font-style:italic;">Predictions calculated via linear regression of past 14 days activity.</div>' +
+      '</div>' +
     '</div>' +
+
+    // 6. Mini analytics cards (Recovery/Plateau/1RM/Forecast)
+    '<div class="analytics-grid">' +
+      '<div class="analytics-card tilt-card">' +
+        '<div class="an-label">RECOVERY READINESS</div>' +
+        '<div class="an-val" style="color:var(--green)">' + recIndex + '%</div>' +
+        '<div class="an-trend ' + (recIndex > 70 ? 'up' : 'down') + '">' + (recIndex > 70 ? '▲ OPTIMAL' : '▼ CAUTION') + '</div>' +
+      '</div>' +
+      '<div class="analytics-card tilt-card">' +
+        '<div class="an-label">PLATEAU STATUS</div>' +
+        '<div class="an-val" style="color:' + (isPlat ? 'var(--red)' : 'var(--blue)') + '">' + (isPlat ? 'DETECTED' : 'CLEAR') + '</div>' +
+        '<div class="an-trend">' + (isPlat ? 'SWITCH PROGRAM' : 'KEEP GRINDING') + '</div>' +
+      '</div>' +
+      '<div class="analytics-card tilt-card">' +
+        '<div class="an-label">ESTIMATED 1-RM</div>' +
+        '<div class="an-val" style="color:var(--gold)">' + (best1rm || '---') + ' <span style="font-size:0.6rem">KG</span></div>' +
+        '<div class="an-trend">BEST RECENT LIFT</div>' +
+      '</div>' +
+      '<div class="analytics-card tilt-card">' +
+        '<div class="an-label">FORECAST (30D)</div>' +
+        '<div class="an-val" style="color:var(--fire)">' + weightPred30 + ' <span style="font-size:0.6rem">KG</span></div>' +
+        '<div class="an-trend">A.I PREDICTION</div>' +
+      '</div>' +
+    '</div>' +
+
+    // 7. Muscle Group Volume chart
+    '<div class="section">' +
+      '<div class="sec-h"><div class="sec-h-title">💪 MUSCLE GROUP VOLUME</div></div>' +
+      '<div class="tilt-card" style="padding:10px; border-radius:14px;">' + generateMuscleChartSVG() + '</div>' +
+    '</div>' +
+
+    // 8. Weight Trend chart
+    '<div class="weight-chart" style="margin:20px 16px; padding:18px 16px; background:linear-gradient(135deg, rgba(255,107,26,0.08), rgba(88,198,255,0.05)); border:1px solid rgba(255,107,26,0.2); border-radius:18px; backdrop-filter:blur(10px);">' +
+      '<div class="weight-chart-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:0.9rem; font-weight:900; letter-spacing:1px; color:var(--gold);">📊 WEIGHT TREND <button onclick="DB.exportData()" style="background:rgba(255,107,26,0.2); border:1px solid rgba(255,107,26,0.3); color:var(--gold); font-size:.65rem; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:\'Bebas Neue\',sans-serif; letter-spacing:1px; font-weight:700; transition:all 0.3s;">⬇️ EXPORT</button></div>' +
+      '<div style="position:relative; height:240px;">' +
+        generateWeightChartSVG(chartWeights.slice(-15)) +
+      '</div>' +
+    '</div>' +
+
+    // 9. Data Management
+    '<div class="section" style="margin-bottom:100px;">' +
+      '<div class="sec-h"><div class="sec-h-title">⚙️ DATA MANAGEMENT</div></div>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
+        '<button class="modal-btn" onclick="DB.exportCSV()" style="width:100%; border-color:var(--green); color:var(--green); font-size:0.7rem;">📊 EXCEL CSV</button>' +
+        '<button class="modal-btn" onclick="openImportModal()" style="width:100%; border-color:var(--purple); color:var(--purple); font-size:0.7rem;">🔄 RESTORE JSON</button>' +
+        '<button class="modal-btn" onclick="window.print()" style="width:100%; border-color:var(--blue); color:var(--blue); font-size:0.7rem; grid-column: span 2;">📄 DOWNLOAD PDF REPORT</button>' +
+      '</div>' +
     '</div>';
 
   setTimeout(function () {
@@ -1460,7 +2133,7 @@ function renderProgress() {
     var workoutData = DB.getWorkout(todayDate);
 
     // 1. Process today's meal completion
-    var mealIds = ['pregym', 'lunch', 'dinner'];
+    var mealIds = ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'];
     var mealsDone = 0;
     var mealsSkipped = 0;
     mealIds.forEach(function (mid) {
@@ -1562,6 +2235,26 @@ function saveWeight() {
     if (currentPage === 'home') renderHome();
     else if (currentPage === 'progress') renderProgress();
     showToast('⚖️ Weight logged!');
+  } else {
+    showToast('⚠️ Please enter a valid weight.');
+  }
+}
+
+function editTarget() {
+  var prof = DB.profile();
+  openModal(
+    '<div class="modal-title">🎯 EDIT TARGET WEIGHT</div>' +
+    '<input class="modal-input" id="edit-target" type="number" step="0.1" value="' + (prof.targetWeight || 65) + '" placeholder="Target weight in kg..."/>' +
+    '<button class="modal-btn primary" onclick="saveTarget()">SAVE TARGET</button>'
+  );
+}
+function saveTarget() {
+  var v = parseFloat(document.getElementById('edit-target').value);
+  if (v > 20 && v < 300) {
+    DB.setProfile({ targetWeight: v });
+    closeModal();
+    renderProgress();
+    showToast('🎯 Target weight updated!');
   } else {
     showToast('⚠️ Please enter a valid weight.');
   }
@@ -1790,7 +2483,7 @@ function getCycleData(days) {
     var meals = entry._rawDiet || {};
     var workout = entry._rawWorkout || {};
     var mealCount = 0;
-    ['pregym', 'lunch', 'dinner'].forEach(function (m) { if (meals[m] === true) mealCount++; });
+    ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'].forEach(function (m) { if (meals[m] === true) mealCount++; });
     data.push({
       date: dStr,
       water: water,
@@ -2306,12 +2999,19 @@ function setupSave() {
   var age = parseInt(document.getElementById('s-age').value);
   var gender = document.getElementById('s-gender').value;
   var waterGoal = parseInt(document.getElementById('s-water-goal').value) || 10;
+  var bodyFat = parseFloat(document.getElementById('s-bodyfat').value) || 20;
+  var goalMode = document.getElementById('s-goal-mode').value;
+
   if (!weight) { showToast('Enter your current weight!'); return; }
   if (!targetWeight) { showToast('Enter your target weight!'); return; }
   if (!height) { showToast('Enter your height for BMI!'); return; }
   if (!age) { showToast('Enter your age for accuracy!'); return; }
 
-  DB.setProfile({ name: name, height: height, waterGoal: waterGoal, targetWeight: targetWeight, startWeight: weight, age: age, gender: gender });
+  DB.setProfile({ 
+    name: name, weight: weight, targetWeight: targetWeight, 
+    height: height, age: age, gender: gender, waterGoal: waterGoal,
+    startWeight: weight, bodyFat: bodyFat, goalMode: goalMode
+  });
   DB.addWeight(today(), weight);
   initApp();
 }
@@ -2371,7 +3071,17 @@ function initApp() {
       DAILY_MACROS = d.DAILY_MACROS;
       DAILY_TIMELINE = d.DAILY_TIMELINE;
       DATA_LOADED = true;
-      if (DB.profile().name) initApp();
+      // Hide splash screen
+      var splash = document.getElementById('splash');
+      if (splash) splash.style.display = 'none';
+      // If user has profile, start app; otherwise show setup
+      if (DB.profile().name) {
+        initApp();
+      } else {
+        // Ensure setup is visible
+        document.getElementById('setup').style.display = 'block';
+        window.setupReady = true;
+      }
     })
     .catch(function (e) {
       console.error('data.json load failed:', e);

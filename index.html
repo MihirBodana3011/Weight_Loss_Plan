@@ -102,6 +102,19 @@
         <label class="form-label">HYDRATION_QUOTA (GLASSES)</label>
         <input class="form-input" id="s-water-goal" type="number" placeholder="10" min="4" max="20" />
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">CURRENT BODY_FAT (%)</label>
+          <input class="form-input" id="s-bodyfat" type="number" placeholder="20" step="0.1" min="3" max="50" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">PROTOCOL_MOOD</label>
+          <select class="form-input custom-select" id="s-goal-mode">
+            <option value="cut">SHRED (CUT)</option>
+            <option value="bulk">MAINTAIN/GAIN (BULK)</option>
+          </select>
+        </div>
+      </div>
       <button class="setup-btn haptic-press" onclick="setupSave()">⚡ INITIATE PROTOCOL</button>
       <!-- Setup info removed -->
     </div>
@@ -173,7 +186,7 @@
     <div class="modal-box" id="modal-box"></div>
   </div>
 
-  <script src="app.js?v=12" charset="UTF-8"></script>
+  <script src="app.js?v=14" charset="UTF-8"></script>
 </body>
 
 </html>

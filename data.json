@@ -164,27 +164,11 @@
           "icon": "\ud83c\udfc3",
           "exercises": [
             {
-              "id": "c1",
-              "name": "Stair Climber",
-              "sets": 1,
-              "reps": null,
-              "time": "10 min",
-              "logWeight": false
-            },
-            {
-              "id": "c2",
+              "id": "cardio_treadmill",
               "name": "Treadmill Incline Walk",
               "sets": 1,
               "reps": null,
-              "time": "15 min",
-              "logWeight": false
-            },
-            {
-              "id": "c3",
-              "name": "Cross Trainer",
-              "sets": 1,
-              "reps": null,
-              "time": "10 min",
+              "time": "60 min",
               "logWeight": false
             }
           ]
@@ -356,27 +340,11 @@
           "icon": "\ud83c\udfc3",
           "exercises": [
             {
-              "id": "c1",
-              "name": "Stair Climber",
-              "sets": 1,
-              "reps": null,
-              "time": "10 min",
-              "logWeight": false
-            },
-            {
-              "id": "c2",
+              "id": "cardio_treadmill",
               "name": "Treadmill Incline Walk",
               "sets": 1,
               "reps": null,
-              "time": "15 min",
-              "logWeight": false
-            },
-            {
-              "id": "c3",
-              "name": "Cross Trainer",
-              "sets": 1,
-              "reps": null,
-              "time": "10 min",
+              "time": "60 min",
               "logWeight": false
             }
           ]
@@ -559,27 +527,11 @@
           "icon": "\ud83c\udfc3",
           "exercises": [
             {
-              "id": "c1",
-              "name": "Stair Climber",
-              "sets": 1,
-              "reps": null,
-              "time": "10 min",
-              "logWeight": false
-            },
-            {
-              "id": "c2",
+              "id": "cardio_treadmill",
               "name": "Treadmill Incline Walk",
               "sets": 1,
               "reps": null,
-              "time": "15 min",
-              "logWeight": false
-            },
-            {
-              "id": "c3",
-              "name": "Cross Trainer",
-              "sets": 1,
-              "reps": null,
-              "time": "10 min",
+              "time": "60 min",
               "logWeight": false
             }
           ]
@@ -674,216 +626,314 @@
   },
   "WEEKLY_MEALS": {
     "sun": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Soya Chunks Curry (100g dry) + 2 Jowar Roti + Kachumber Salad",
-      "dinner": "Moong Dal Chilla (2 pcs) + Mint Chutney + Cucumber Slices"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Cucumber Salad (1 small bowl) + Mix Dal (1 small bowl) + Buttermilk (2 glass) + Jeera Rice (2 small bowl)",
+      "dinner": "<strong>Dinner:</strong> Vegetable Oats (1 small bowl) + Falhari Grilled Paneer (1 small bowl)",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     },
     "mon": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Poha + Onion Salad",
-      "dinner": "Rava & Veggie Chilla (2 pcs) + Peanut Chutney + Salad"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Arhar Dal Tadka (1 small bowl) + Cucumber Tomato Salad (1.5 small bowl) + Boiled White Rice (1 small bowl)",
+      "dinner": "<strong>Dinner:</strong> Rajma Daliya (1 small bowl) + Plain Curd (1 small bowl) + Tomato Mint Chutney",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     },
     "tue": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Dal Tadka (2 katori) + Soya Granules Bhurji (50g) + 2 Jowar Roti",
-      "dinner": "Besan (Gram Flour) Chilla (2 pcs) + Green Chutney + Sautéed Spinach"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Carrot/Capsicum Salad (1 small bowl) + Okra/Bhindi Masala (1.5 small bowl) + Phulka Roti (1)",
+      "dinner": "<strong>Dinner:</strong> Green Salad (1 tbsp) + Vegetable Soya Pulao - Brown Rice (1 small bowl)",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     },
     "wed": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Chole (Chickpea Curry 1.5 katori) + 2 Jowar Roti + Salad",
-      "dinner": "Masoor Dal Chilla (2 pcs) + Mint Chutney + Steamed Veggies"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Cucumber Salad (1 small bowl) + Chola Masala (1.5 serving) + Jeera Rice (1 small bowl)",
+      "dinner": "<strong>Dinner:</strong> Cucumber Salad (1 small bowl) + Moong Dal Tadka (1 small bowl) + Phulka Roti (1)",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     },
     "thu": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Black Chana Curry (1.5 katori) + 2 Jowar Roti + Salad",
-      "dinner": "Rava Chilla (2 pcs) + Roasted Peanut Dip + Cucumber"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Cucumber Salad (1 small bowl) + Khichdi With Soya Nuggets (1 large bowl) + Plain Curd (0.5 small bowl)",
+      "dinner": "<strong>Dinner:</strong> Vegetable Paneer Pulao (1 serving) + Green Salad (1 small bowl)",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     },
     "fri": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Palak Dal (2 katori) + Soya Bowl (50g) + 2 Jowar Roti",
-      "dinner": "Green Moong Dal Chilla (2 pcs Pesarattu) + Mint Chutney + Salad"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Carrot Cucumber Salad (1 small bowl) + Phulka Roti (2) + Plain Curd (0.5 small bowl) + Mixed Vegetable Sabzi With Dry Peas (1 small bowl)",
+      "dinner": "<strong>Dinner:</strong> Cucumber Tomato Salad (1 large bowl) + Vegetable Daliya (1.5 serving)",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     },
     "sat": {
-      "pregym": "½ Banana + Black Coffee<br><br><strong>Coffee Benefits:</strong> Blocks fatigue, sharply increases mental focus, and accelerates fat burning during workouts.",
-      "lunch": "Soya Keema Matar (100g) + Dal (1 katori) + 2 Jowar Roti",
-      "dinner": "Paneer Bhurji (100g - Weekend Treat) + 1 Jowar Roti + Salad"
+      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
+      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
+      "lunch": "<strong>Lunch:</strong> Multigrain Phulka Roti (1) + Carrot Cucumber Salad (1 small bowl) + Green Dal (Moong) (1 small bowl)",
+      "dinner": "<strong>Dinner:</strong> Cucumber Carrot Salad (1 large bowl) + Mixed Dal Khichdi (1 serving) + Mix Veg Raita (1 serving)",
+      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
+      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
+      "supp_centrum": "Centrum Men multivitamin with lunch",
+      "supp_tslim": "T-Slim tablet with lunch",
+      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
+      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
+      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
+      "supp_gt": "1 cup plain green tea, no sugar"
     }
   },
   "MEAL_CONFIG": {
     "pregym": {
-      "label": "Pre-Gym Meal",
+      "label": "Pre-Workout Meal",
       "time": "03:00 AM",
       "icon": "🍌",
       "bg": "#1a0a00",
-      "cal": 50,
-      "protein": 0.5,
-      "carbs": 13,
+      "cal": 105,
+      "protein": 1,
+      "carbs": 27,
       "fat": 0,
-      "note": "½ Banana + Black Coffee · Easy to digest"
+      "note": "1 medium banana + black coffee (no sugar, no milk)"
+    },
+    "postworkout": {
+      "label": "Post-Workout Recovery",
+      "time": "06:00 AM",
+      "icon": "🥛",
+      "bg": "#0d1a1a",
+      "cal": 175,
+      "protein": 12,
+      "carbs": 10,
+      "fat": 8,
+      "note": "200ml warm low-fat milk + 30g roasted chana"
     },
     "lunch": {
       "label": "Main Lunch",
-      "time": "01:15 PM",
+      "time": "01:00 PM",
       "icon": "🍱",
       "bg": "#0d1a00",
-      "cal": 580,
-      "protein": 52,
-      "carbs": 55,
-      "fat": 14,
-      "note": "Biggest meal · Max protein absorption"
+      "cal": 420,
+      "protein": 18,
+      "carbs": 61,
+      "fat": 9,
+      "note": "Mix of dal, rice, roti, vegetables + salad"
     },
     "dinner": {
       "label": "Dinner",
       "time": "05:00 PM",
       "icon": "🍽️",
       "bg": "#0a0a1a",
-      "cal": 430,
-      "protein": 40,
-      "carbs": 32,
-      "fat": 11,
-      "note": "Lean fuel before work shift"
+      "cal": 250,
+      "protein": 16,
+      "carbs": 31,
+      "fat": 7,
+      "note": "Balanced protein & carb evening meal"
+    },
+    "supp_snack": {
+      "label": "Office Break Snack",
+      "time": "09:30 PM",
+      "icon": "🥜",
+      "bg": "#141400",
+      "cal": 120,
+      "protein": 7,
+      "carbs": 18,
+      "fat": 3,
+      "note": "30g roasted chana or 20g makhana"
     }
   },
   "DAILY_MACROS": {
     "sun": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 580, "protein": 59, "carbs": 82, "fat": 3 },
-      "dinner": { "cal": 350, "protein": 19, "carbs": 47, "fat": 10 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 430, "protein": 18, "carbs": 65, "fat": 8 },
+      "dinner": { "cal": 240, "protein": 16, "carbs": 28, "fat": 6 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     },
     "mon": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 330, "protein": 7, "carbs": 60, "fat": 10 },
-      "dinner": { "cal": 350, "protein": 12, "carbs": 55, "fat": 10 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 410, "protein": 16, "carbs": 62, "fat": 8 },
+      "dinner": { "cal": 260, "protein": 14, "carbs": 35, "fat": 6 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     },
     "tue": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 670, "protein": 50, "carbs": 99, "fat": 13 },
-      "dinner": { "cal": 400, "protein": 18, "carbs": 50, "fat": 13 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 415, "protein": 14, "carbs": 60, "fat": 10 },
+      "dinner": { "cal": 255, "protein": 22, "carbs": 28, "fat": 8 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     },
     "wed": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 630, "protein": 22, "carbs": 104, "fat": 17 },
-      "dinner": { "cal": 370, "protein": 21, "carbs": 52, "fat": 8 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 420, "protein": 18, "carbs": 58, "fat": 10 },
+      "dinner": { "cal": 250, "protein": 16, "carbs": 32, "fat": 6 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     },
     "thu": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 580, "protein": 25, "carbs": 99, "fat": 14 },
-      "dinner": { "cal": 380, "protein": 14, "carbs": 56, "fat": 13 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 425, "protein": 24, "carbs": 52, "fat": 12 },
+      "dinner": { "cal": 245, "protein": 18, "carbs": 26, "fat": 8 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     },
     "fri": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 650, "protein": 48, "carbs": 94, "fat": 13 },
-      "dinner": { "cal": 350, "protein": 21, "carbs": 45, "fat": 8 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 430, "protein": 16, "carbs": 64, "fat": 10 },
+      "dinner": { "cal": 240, "protein": 12, "carbs": 32, "fat": 6 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     },
     "sat": {
-      "pregym": { "cal": 50, "protein": 0.5, "carbs": 13, "fat": 0 },
-      "lunch": { "cal": 700, "protein": 67, "carbs": 97, "fat": 7 },
-      "dinner": { "cal": 430, "protein": 22, "carbs": 32, "fat": 23 }
+      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
+      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
+      "lunch": { "cal": 420, "protein": 17, "carbs": 60, "fat": 10 },
+      "dinner": { "cal": 255, "protein": 14, "carbs": 38, "fat": 6 },
+      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
     }
   },
   "DAILY_TIMELINE": [
     {
       "t": "2:30 AM",
       "a": "🏁 JOB ENDS",
-      "d": "Transition to Pre-Workout Phase"
+      "d": "Job finished — hydrate with 1 glass lukewarm water"
+    },
+    {
+      "t": "2:45 AM",
+      "id": "supp_fatburner",
+      "a": "💊 Dr. Morepen Fat Burner",
+      "d": "Take with half banana — not on empty stomach"
     },
     {
       "t": "3:00 AM",
       "id": "pregym",
-      "a": "🍌 PRE-GYM MEAL",
-      "d": "½ Banana + Black Coffee"
-    },
-    {
-      "t": "3:15 AM",
-      "id": "supp_fatburner",
-      "a": "💊 Dr. Morepen Fat Burner",
-      "d": "Metabolism Support (Gym Days)"
+      "a": "🍌 PRE-WORKOUT MEAL",
+      "d": "1 medium banana + black coffee (no sugar, no milk)"
     },
     {
       "t": "4:00 AM",
       "a": "🏋️ GYM TRAINING",
-      "d": "4:00 AM – 6:00 AM · High-Intensity at Fit Master Gym"
+      "d": "High intensity training (1 hr)"
+    },
+    {
+      "t": "5:00 AM",
+      "a": "🚶 TREADMILL WALK",
+      "d": "1 hr walk at 4.5–5 km/hr"
+    },
+    {
+      "t": "6:00 AM",
+      "id": "postworkout",
+      "a": "🥛 POST-WORKOUT RECOVERY",
+      "d": "200ml warm low-fat milk + 30g roasted chana"
     },
     {
       "t": "6:15 AM",
       "a": "😴 RECOVERY SLEEP",
-      "d": "Deep 6-Hour Recovery Window"
+      "d": "6 hours of recovery sleep"
     },
     {
       "t": "12:00 PM",
       "a": "⏰ WAKE UP",
-      "d": "-"
+      "d": "Start the day with a detox drink"
     },
     {
-      "t": "12:10 PM",
+      "t": "12:05 PM",
       "id": "supp_jeera1",
-      "a": "🌿 Jeera/Saunf/Ajwain + Lemon",
-      "d": "Fasted detox drink"
+      "a": "🌿 DETOX DRINK",
+      "d": "Warm water with lemon, jeera/saunf/ajwain"
     },
     {
-      "t": "12:30 PM",
-      "id": "supp_acv1",
-      "a": "🍎 Apple Cider Vinegar",
-      "d": "1 tbsp in warm water"
+      "t": "12:15 PM",
+      "id": "supp_tslim",
+      "a": "💊 T-Slim Tablet",
+      "d": "Take with water 15 min before lunch"
+    },
+    {
+      "t": "12:15 PM",
+      "id": "supp_centrum",
+      "a": "💊 Centrum Men Multivitamin",
+      "d": "Take with lunch"
     },
     {
       "t": "1:00 PM",
-      "id": "supp_isab1",
-      "a": "🌾 Isabgol",
-      "d": "1 tsp in water (Fiber)"
-    },
-    {
-      "t": "1:15 PM",
       "id": "lunch",
       "a": "🍱 MAIN LUNCH",
-      "d": "High Protein / High Fiber Meal"
+      "d": "High protein vegetarian lunch + salad, no roti"
     },
     {
-      "t": "1:30 PM",
-      "id": "supp_centrum",
-      "a": "💊 Centrum Men Multivitamin",
-      "d": "24 Essential Nutrients"
-    },
-    {
-      "t": "3:10 PM",
-      "id": "supp_jeera2",
-      "a": "🌿 Jeera/Saunf/Ajwain + Lemon",
-      "d": "Fasting detox drink"
-    },
-    {
-      "t": "3:30 PM",
-      "id": "supp_acv2",
+      "t": "2:30 PM",
+      "id": "supp_acv1",
       "a": "🍎 Apple Cider Vinegar",
-      "d": "1 tbsp in warm water"
+      "d": "1 tbsp ACV in warm water"
     },
     {
       "t": "4:00 PM",
       "id": "supp_isab2",
       "a": "🌾 Isabgol",
-      "d": "1 tsp in water (Fiber)"
-    },
-    {
-      "t": "4:30 PM",
-      "id": "supp_tslim",
-      "a": "💊 T-Slim Tablet",
-      "d": "Garcinia + L-Carnitine"
+      "d": "1 tsp in lukewarm water before dinner"
     },
     {
       "t": "5:00 PM",
       "id": "dinner",
       "a": "🍽️ DINNER",
-      "d": "Lean Fuel Before Work Shift"
+      "d": "Alternating protein-rich dinner"
     },
     {
       "t": "6:30 PM",
       "a": "🏢 JOB STARTS",
-      "d": "Official Shift Begins"
+      "d": "Keep a 1 litre water bottle with you"
     },
     {
-      "t": "11:59 PM",
+      "t": "9:30 PM",
+      "id": "supp_snack",
+      "a": "🥜 OFFICE BREAK SNACK",
+      "d": "30g roasted chana or 20g makhana"
+    },
+    {
+      "t": "12:00 AM",
       "id": "supp_gt",
-      "a": "🍵 Green Tea + Lemon",
-      "d": "Supplement — Metabolism Boost"
+      "a": "🍵 Green Tea",
+      "d": "Plain, no sugar"
     }
   ]
 }

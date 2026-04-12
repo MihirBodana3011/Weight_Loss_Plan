@@ -37,26 +37,32 @@ const DAILY_SCHEDULE = [
 
   {
     h: 3, m: 0, tag: 'pregym', challenge: false, urgent: true,
-    title: '🍌 PRE-GYM MEAL',
-    body: '½ Banana + Black Coffee. Benefits: Blocks fatigue, increases focus, and accelerates fat burning! 🔥'
+    title: '🍌 PRE-WORKOUT MEAL',
+    body: '1 medium banana + black coffee (no sugar, no milk). Energy and fat-burning boost before gym.'
   },
 
   {
-    h: 3, m: 15, tag: 'fat_burner', challenge: false, urgent: false,
-    title: '💊 Fat Burner Tablet — Dr. Morepen',
-    body: 'Gym days only — abhi le lo tablet. Metabolism fire karo before gym! 🔥'
+    h: 2, m: 45, tag: 'fat_burner', challenge: false, urgent: false,
+    title: '💊 Dr. Morepen Fat Burner',
+    body: 'Take the fat burner with half banana — avoid empty stomach before workout.'
   },
 
   {
     h: 4, m: 0, tag: 'gym', challenge: false, urgent: true,
     title: '🏋️ GYM TIME — BEAST MODE ON!',
-    body: '4 AM – 6 AM: High-Intensity session at Fit Master Gym. No excuses — JAO ABHI! 💪'
+    body: '4 AM – 6 AM: High-intensity training. Stay strong and controlled. 💪'
   },
 
   {
-    h: 5, m: 30, tag: 'gym_wrap', challenge: false, urgent: false,
-    title: '⚡ Gym Wrap-Up Soon',
-    body: 'Cool down karo, stretch karo. 6 baj rahe hain — recovery time shuru hoga.'
+    h: 5, m: 0, tag: 'treadmill', challenge: false, urgent: false,
+    title: '🚶 TREADMILL WALK — 5:00 AM',
+    body: '1 hr walk at 4.5–5 km/hr. Keep pace steady on a low-calorie day.'
+  },
+
+  {
+    h: 6, m: 0, tag: 'postworkout', challenge: false, urgent: false,
+    title: '🥛 POST-WORKOUT RECOVERY — 6:00 AM',
+    body: '200ml warm low-fat milk + 30g roasted chana to protect muscle and recovery.'
   },
 
   // === RECOVERY SLEEP (6:15 AM – 12:00 PM) ===
@@ -70,69 +76,65 @@ const DAILY_SCHEDULE = [
   {
     h: 12, m: 0, tag: 'wake_up', challenge: false, urgent: true,
     title: '⏰ WAKE UP — 12:00 PM',
-    body: 'Uth ja bhai! Fasted kickstart mode ON. Time to start the day. ☀️'
+    body: 'Uth ja bhai! Start the day with a detox drink first. ☀️'
   },
   {
-    h: 12, m: 10, tag: 'jeera1', challenge: false, urgent: false,
-    title: '🌿 Jeera/Saunf/Ajwain + Lemon',
-    body: 'Supplement — Fasting detox drink pi lo abhi. Metabolism active karo! ⚡'
+    h: 12, m: 5, tag: 'jeera1', challenge: false, urgent: false,
+    title: '🌿 DETOX DRINK',
+    body: 'Warm water with lemon, jeera, saunf, and ajwain. Hydrate and reset. ⚡'
   },
   {
-    h: 12, m: 30, tag: 'acv1', challenge: false, urgent: false,
-    title: '🍎 Apple Cider Vinegar — R1',
-    body: 'Supplement — 1 tbsp ACV in warm water. Gut health boost! 💪'
+    h: 12, m: 15, tag: 'supp_tslim', challenge: false, urgent: false,
+    title: '💊 T-Slim Tablet',
+    body: 'Take T-Slim with lunch to support appetite control. ✅'
   },
   {
-    h: 13, m: 0, tag: 'isab1', challenge: false, urgent: false,
-    title: '🌾 Isabgol — Round 1',
-    body: 'Supplement — 1 tsp in water. Fiber dose no. 1.'
+    h: 12, m: 15, tag: 'supp_centrum', challenge: false, urgent: false,
+    title: '💊 Centrum Men Multivitamin',
+    body: 'Take Centrum with lunch for daily nutrient support.'
+  },
+  {
+    h: 13, m: 0, tag: 'lunch', challenge: false, urgent: true,
+    title: '🍱 MAIN LUNCH — 1:00 PM',
+    body: 'Alternating high-protein items + salad, no roti. High protein & fiber. 💪'
+  },
+  {
+    h: 14, m: 30, tag: 'acv1', challenge: false, urgent: false,
+    title: '🍎 Apple Cider Vinegar',
+    body: '1 tbsp ACV in warm water after lunch. Gut and sugar support.'
+  },
+  {
+    h: 16, m: 0, tag: 'isab2', challenge: false, urgent: false,
+    title: '🌾 Isabgol — Pre-Dinner',
+    body: '1 tsp Isabgol in lukewarm water before dinner. Fullness and fiber support.'
   },
 
-  // === MAIN LUNCH (1:15 PM) ===
-  {
-    h: 13, m: 15, tag: 'lunch', challenge: false, urgent: true,
-    title: '🍱 MAIN LUNCH — 1:15 PM',
-    body: 'High Protein / High Fiber Meal. Biggest meal of the day — sahi se khao! 💪'
-  },
-
-  // === AFTERNOON SUPPLEMENTS (4:00 PM – 4:30 PM) ===
-  {
-    h: 16, m: 0, tag: 'jeera2', challenge: false, urgent: false,
-    title: '🌿 Jeera/Saunf/Ajwain + Lemon',
-    body: 'Supplement — Afternoon detox drink. Stay hydrated and active!'
-  },
-
-  {
-    h: 16, m: 15, tag: 'acv2', challenge: false, urgent: false,
-    title: '🍎 Apple Cider Vinegar — R2',
-    body: 'Supplement — 1 tbsp ACV in warm water. Dinner se pehle le lo!'
-  },
-
-  {
-    h: 16, m: 30, tag: 'isab2', challenge: false, urgent: false,
-    title: '🌾 Isabgol — Round 2',
-    body: 'Supplement — 1 tsp in water. Fiber dose no. 2.'
-  },
 
   // === DINNER (5:00 PM) ===
   {
     h: 17, m: 0, tag: 'dinner', challenge: false, urgent: true,
     title: '🍽️ DINNER — 5:00 PM',
-    body: 'Lean fuel before work shift. Job se pehle nutritious khao! 🥗'
+    body: 'Alternating protein-rich dinner. Balanced and nutritious. 🥗'
   },
 
   // === JOB STARTS (6:30 PM) ===
   {
     h: 18, m: 30, tag: 'job_starts', challenge: false, urgent: true,
     title: '🏢 JOB STARTS — 6:30 PM',
-    body: 'Official shift begins! focused raho. Night grind mode ON! 💼'
+    body: 'Shift starts — keep a 1 litre water bottle with you.'
   },
 
   // === HYDRATION MID-SHIFT ===
   {
     h: 20, m: 0, tag: 'water_mid', challenge: false, urgent: false,
     title: '💧 HYDRATION CHECK — Shift mein',
-    body: 'Kaam ke beech paani mat bhoolna! Keep going.'
+    body: 'Paani peena mat bhoolna. Stay hydrated through the night.'
+  },
+
+  {
+    h: 21, m: 30, tag: 'supp_snack', challenge: false, urgent: false,
+    title: '🥜 OFFICE BREAK SNACK — 9:30 PM',
+    body: '30g roasted chana or 20g makhana during your break. Low-calorie protein.'
   },
 
   {
@@ -141,11 +143,11 @@ const DAILY_SCHEDULE = [
     body: 'Raat mein bhi hydrated raho. Goal check karo!'
   },
 
-  // === GREEN TEA (11:59 PM) ===
+  // === GREEN TEA (12:00 AM) ===
   {
-    h: 23, m: 59, tag: 'gt', challenge: false, urgent: false,
-    title: '🍵 Green Tea + Lemon',
-    body: 'Supplement — Metabolism boost & last drink of the day. 🌙'
+    h: 0, m: 0, tag: 'gt', challenge: false, urgent: false,
+    title: '🍵 Green Tea',
+    body: 'Plain green tea, no sugar. Night-time metabolism support. 🌙'
   },
 
   {
