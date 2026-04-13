@@ -18,11 +18,11 @@
     "Sat"
   ],
   "DAY_WORKOUT_TYPE": {
-    "mon": "pull",
-    "tue": "push",
+    "mon": "push",
+    "tue": "pull",
     "wed": "power",
-    "thu": "pull",
-    "fri": "push",
+    "thu": "push",
+    "fri": "pull",
     "sat": "power",
     "sun": "rest"
   },
@@ -31,7 +31,7 @@
       "label": "Back + Biceps",
       "short": "PULL DAY",
       "color": "#ff6b1a",
-      "days": "Mon & Thu",
+      "days": "Tue & Fri",
       "groups": [
         {
           "name": "Warm-Up",
@@ -179,7 +179,7 @@
       "label": "Chest + Triceps + Abs",
       "short": "PUSH DAY",
       "color": "#38bdf8",
-      "days": "Tue & Fri",
+      "days": "Mon & Thu",
       "groups": [
         {
           "name": "Warm-Up",

@@ -43,42 +43,42 @@ var DAILY_MOTIVATIONS = [
 // ═══════════════════════════════════════════════
 var NeuralCore = {
   // 1RM Calculator (Brzycki Formula)
-  calc1RM: function(w, r) {
+  calc1RM: function (w, r) {
     if (r === 1) return w;
     return Math.round(w / (1.0278 - (0.0278 * r)));
   },
 
   // Predict weight in N days based on recent trend (past 7-14 days)
-  predictWeight: function(days) {
+  predictWeight: function (days) {
     var weights = DB.weights();
     if (weights.length < 3) return null;
-    
+
     // Simple linear trend based on first and last log in the window
     var start = weights[0];
     var end = weights[weights.length - 1];
     var dayDiff = (end.t - start.t) / (1000 * 60 * 60 * 24);
     if (dayDiff < 1) return end.kg;
-    
+
     var ratePerDay = (end.kg - start.kg) / dayDiff;
     return (end.kg + (ratePerDay * days)).toFixed(1);
   },
 
   // Identify plateau (weight hasn't changed > 0.5% in 14 days despite > 90% adherence)
-  isPlateau: function() {
+  isPlateau: function () {
     var weights = DB.weights();
     if (weights.length < 5) return false;
-    
+
     var recent = weights.slice(-5);
     var first = recent[0].kg;
     var last = recent[recent.length - 1].kg;
     var diff = Math.abs(first - last);
     var pctChange = (diff / first) * 100;
-    
+
     return pctChange < 0.5; // Less than 0.5% change
   },
 
   // Calculate Volume Load (Sets x Reps x Weight)
-  calcVolume: function(exercises) {
+  calcVolume: function (exercises) {
     var vol = 0;
     for (var id in exercises) {
       var ex = exercises[id];
@@ -88,7 +88,7 @@ var NeuralCore = {
         if (sd[s]) {
           var w = parseFloat(sw[s]) || 0;
           // Assume reps from workout config or 10 if unknown
-          vol += w * 10; 
+          vol += w * 10;
         }
       }
     }
@@ -96,26 +96,26 @@ var NeuralCore = {
   },
 
   // Recovery Readiness Score (0-100)
-  getRecoveryIndex: function() {
+  getRecoveryIndex: function () {
     var mas = getMetabolicAdaptabilityScore();
     var weights = DB.weights();
     var fatigue = 0;
-    
+
     if (weights.length > 2) {
       var latest = weights[weights.length - 1].kg;
       var prev = weights[weights.length - 2].kg;
       if (latest > prev + 1) fatigue += 20; // Rapid water weight spike
     }
-    
+
     return Math.max(0, mas - fatigue);
   },
 
   // Smart Macro Adjustment based on Goal & BF%
-  getMacroAdjustment: function() {
+  getMacroAdjustment: function () {
     var p = DB.profile();
     var bf = parseFloat(p.bodyFat || 20);
     var goal = p.goalMode || 'cut';
-    
+
     var adj = { cal: 0, protein: 0 };
     if (goal === 'cut') {
       adj.cal = -500;
@@ -148,7 +148,7 @@ function todayDay() {
   return DB.get('todayDay') || DAY_NAMES[new Date().getDay()];
 }
 
-function getDayNum() { return DATA_LOADED ? DB.get('dayNum') || 0 : 0; } 
+function getDayNum() { return DATA_LOADED ? DB.get('dayNum') || 0 : 0; }
 function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
 var DAILY_MOTIVATIONS = [
@@ -270,10 +270,10 @@ var DB = {
   },
   exportData: function () {
     var uid = this.profile().userId;
-    var data = { 
+    var data = {
       version: "2.0",
-      profile: this.profile(), 
-      daily: this._getData().filter(function (d) { return d.userId === uid; }), 
+      profile: this.profile(),
+      daily: this._getData().filter(function (d) { return d.userId === uid; }),
       weights: this.weights(),
       advanced: this._g('fp_advancedData') || {}
     };
@@ -284,7 +284,7 @@ var DB = {
     a.download = 'FitOS_Data_' + uid + '_' + today() + '.json';
     a.click();
   },
-  exportCSV: function() {
+  exportCSV: function () {
     var data = this._getData();
     var csv = "Date,Weight,Water,Steps,WorkoutDone,DietDone\n";
     data.forEach(d => {
@@ -297,7 +297,7 @@ var DB = {
     a.download = 'FitOS_Progress_' + today() + '.csv';
     a.click();
   },
-  importData: function(jsonStr) {
+  importData: function (jsonStr) {
     try {
       var data = JSON.parse(jsonStr);
       if (data.profile) this._s('fp_profile', data.profile);
@@ -305,7 +305,7 @@ var DB = {
       if (data.weights) this._s('fp_weightLogs', data.weights);
       if (data.advanced) this._s('fp_advancedData', data.advanced);
       return true;
-    } catch(e) {
+    } catch (e) {
       console.error("Import failed", e);
       return false;
     }
@@ -359,8 +359,8 @@ var DB = {
     this._s('last_active_date', date);
   },
   // Advanced Metrics store
-  getAdvanced: function(key) { return (this._g('fp_advancedData') || {})[key]; },
-  setAdvanced: function(key, val) {
+  getAdvanced: function (key) { return (this._g('fp_advancedData') || {})[key]; },
+  setAdvanced: function (key, val) {
     var d = this._g('fp_advancedData') || {};
     d[key] = val;
     this._s('fp_advancedData', d);
@@ -380,11 +380,11 @@ function handleImportFile(input) {
   var file = input.files[0];
   if (!file) return;
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     var success = DB.importData(e.target.result);
     if (success) {
       showToast('✅ Progress Restored! Restarting...');
-      setTimeout(function() { location.reload(); }, 1500);
+      setTimeout(function () { location.reload(); }, 1500);
     } else {
       showToast('❌ Invalid format.');
     }
@@ -464,7 +464,7 @@ function calcStreak() {
     var dStr = toLocalDate(d);
     var meals = DB.getMeal(dStr);
     var hasActivity = false;
-    MEAL_IDS.forEach(function(id) { if (meals[id] === true) hasActivity = true; });
+    MEAL_IDS.forEach(function (id) { if (meals[id] === true) hasActivity = true; });
     var wk = DB.getWorkout(dStr);
     if (wk.completed) hasActivity = true;
     if (DB.getWater(dStr) > 0) hasActivity = true;
@@ -609,18 +609,18 @@ function getTodaySetsProgress() {
   var wType = todayWorkoutType();
   var wo = WORKOUTS[wType];
   if (!wo || !wo.groups) return { done: 0, total: 0, isRest: wType === 'rest' };
-  
+
   var totalSets = 0;
   wo.groups.forEach(function (g) {
     g.exercises.forEach(function (ex) {
       if (ex.sets > 0) totalSets += ex.sets;
     });
   });
-  
+
   var wkData = DB.getWorkout(today());
   var exData = wkData.exercises || {};
   var doneSets = 0;
-  
+
   wo.groups.forEach(function (g) {
     g.exercises.forEach(function (ex) {
       var ed = exData[ex.id] || {};
@@ -630,7 +630,7 @@ function getTodaySetsProgress() {
       }
     });
   });
-  
+
   return { done: doneSets, total: totalSets, isRest: wType === 'rest' };
 }
 
@@ -639,7 +639,7 @@ function getTodayCaloriesBurned(dayName) {
   var wType = getWorkoutType(dayName);
   var wo = WORKOUTS[wType];
   if (!wo || !wo.groups || wType === 'rest') return { done: 0, total: 0 };
-  
+
   // Calculate date for this day
   var dDt = new Date();
   dDt.setDate(dDt.getDate() - dDt.getDay() + DAY_NAMES.indexOf(dayName));
@@ -648,7 +648,7 @@ function getTodayCaloriesBurned(dayName) {
   var exData = wkData.exercises || {};
   var completedCalories = 0;
   var totalCalories = 0;
-  
+
   // Calorie burn per set by exercise type - UPDATED WITH DAY-BY-DAY VALUES
   // PULL DAY TOTAL: 1,094 cal | PUSH DAY TOTAL: 1,061 cal | POWER DAY TOTAL: 1,306 cal
   var calorieMap = {
@@ -682,13 +682,13 @@ function getTodayCaloriesBurned(dayName) {
     // Cardio: 12 cal per minute (60 min = 720 cal)
     "Treadmill Incline Walk": 12
   };
-  
+
   wo.groups.forEach(function (g) {
     g.exercises.forEach(function (ex) {
       var ed = exData[ex.id] || {};
       var setDone = ed.setDone || {};
       var baseCal = calorieMap[ex.name] || 10; // Default 10 cal per set
-      
+
       // For time-based exercises (cardio/warmup), multiply by time in minutes
       if (ex.time && (ex.name === "Treadmill Incline Walk" || ex.name === "Cycling (Warm-up)" || ex.name === "Mobility Work")) {
         var timeMatch = ex.time.match(/(\d+)/);
@@ -716,7 +716,7 @@ function getTodayCaloriesBurned(dayName) {
       }
     });
   });
-  
+
   return { done: Math.round(completedCalories), total: Math.round(totalCalories) };
 }
 
@@ -758,7 +758,7 @@ function updateHomeWorkoutCard() {
   var woVal = wo.isRest ? '🌿' : (wo.done + '<span style="font-size:.65rem;color:var(--sub)">/' + wo.total + '</span>');
   var setsColor = sp.total > 0 ? (sp.done >= sp.total ? 'var(--green)' : '#ff6b1a') : 'var(--sub)';
   var setsVal = sp.isRest ? '—' : (sp.done + '<span style="font-size:.65rem;color:var(--sub)">/' + sp.total + '</span>');
-  
+
   var statChips = document.querySelectorAll('.stat-chip');
   // Find the workout chip (usually 3rd chip - index 2)
   if (statChips[2]) {
@@ -833,7 +833,7 @@ function renderHome() {
     var goal = p.waterGoal || 10;
     var ML = 250;
     var curL = (w * ML / 1000).toFixed(2);
-    var weights = DB.weights().sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+    var weights = DB.weights().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     var lastWt = weights.length ? weights[weights.length - 1].kg : null;
     var prevWt = weights.length > 1 ? weights[weights.length - 2].kg : null;
     var wtDelta = (lastWt && prevWt) ? (lastWt - prevWt).toFixed(1) : null;
@@ -927,29 +927,16 @@ function renderHome() {
       '</div>' +
       '</div>' +
 
-      // Daily Motivation Card
-      '<div class="motivation-card tilt-card" style="margin:4px 16px 8px;">' +
-      '<div style="display:flex;gap:10px;align-items:flex-start;">' +
-      '<div class="mot-icon">⚡</div>' +
-      '<div class="mot-quote">' + motivation + '</div>' +
-      '</div>' +
-      '</div>' +
-
       // Quick Stats Chips
       '<div class="quick-stats">' +
-      // Water chip — shows glasses + liters
+      // Water chip — shows glasses
       '<div class="stat-chip tilt-card" onclick="quickWaterAdd()">' +
       '<div class="stat-val" style="color:var(--blue)">' + w + '<span style="font-size:.65rem">/' + goal + '</span></div>' +
-      '<div class="stat-sub" style="color:var(--blue);">' + curL + ' L</div>' +
       '<div class="stat-label">💧 WATER</div>' +
       '</div>' +
-      // Weight chip — shows kg + delta + BMI
+      // Weight chip — shows kg
       '<div class="stat-chip tilt-card" onclick="editWeight()">' +
       '<div class="stat-val" style="color:var(--gold)">' + (lastWt || '<span style="font-size:.8rem;color:var(--sub)">TAP</span>') + '</div>' +
-      '<div class="stat-sub">' +
-      (wtDeltaStr ? '<div style="color:' + wtDeltaColor + ';">' + wtDeltaStr + '</div>' : '') +
-      (bmi ? '<div style="color:' + bmiColor + ';">BMI ' + bmi + '</div>' : '') +
-      '</div>' +
       '<div class="stat-label">⚖️ KG</div>' +
       '</div>' +
       // Workout chip
@@ -1025,7 +1012,7 @@ function scheduleHTML() {
     var windowTag = getSmartWindowTag(r.t);
     var windowHtml = windowTag ? '<div class="smart-window-tag" style="font-size:0.55rem; color:var(--fire); letter-spacing:1.5px; margin-bottom:4px; font-weight:900; text-shadow:0 0 8px var(--fire-glow);">⚡ ' + windowTag + '</div>' : '';
 
-    return '<div id="' + rowId + '" onclick="' + clickAction + '" class="stagger-item haptic-press tilt-card" style="animation-delay:' + (idx * 0.05) + 's;cursor:pointer;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:10px;margin-bottom:6px;padding:12px;display:flex;flex-direction:column;gap:4px;transition:all .3s ease;">' +
+    return '<div id="' + rowId + '" onclick="' + clickAction + '" class="stagger-item haptic-press tilt-card" style="animation-delay:' + (idx * 0.05) + 's;cursor:pointer;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:10px;margin-bottom:6px;padding:12px;display:flex;flex-direction:column;gap:4px;transition:transform 0.3s cubic-bezier(0.3, 1, 0.3, 1);">' +
       windowHtml +
       '<div style="display:flex;align-items:center;gap:8px;">' +
       '<div style="min-width:68px;font-size:.6rem;font-family:JetBrains Mono,monospace;color:var(--sub);line-height:1.3;">' + r.t + '</div>' +
@@ -1373,13 +1360,13 @@ function renderWorkoutDay(day, dStr, wo, wkData, isDone) {
       var done = ed.done || false;
       var badge = ex.time ? ex.time : (ex.sets + 'x' + (ex.reps || '?'));
       var setsHtml = '';
-      
+
       // Auto-suggestion logic
       var suggestedWeight = '';
       if (ex.logWeight !== false && !ex.time) {
         var prevWeights = DB.weights().filter(w => w.exId === ex.id);
         if (prevWeights.length > 0) {
-          var lastW = prevWeights[prevWeights.length-1].kg;
+          var lastW = prevWeights[prevWeights.length - 1].kg;
           var sug = (lastW * 1.025).toFixed(1); // 2.5% progression
           suggestedWeight = '<div class="suggested-weight">NEXT GOAL: ' + sug + 'kg</div>';
         }
@@ -1392,22 +1379,12 @@ function renderWorkoutDay(day, dStr, wo, wkData, isDone) {
           var isSetDone = (ed.setDone || {})[s] || false;
           var showWeight = ex.logWeight !== false;
 
-          var inputs = showWeight ? 
-            '<div class="set-inputs">' +
-              '<div class="mini-input-wrap">' +
-                '<div class="mini-label">KG</div>' +
-                '<input class="mini-input" type="number" step="0.5" value="' + sw + '" onchange="saveSetWeight(\'' + dStr + '\',\'' + ex.id + '\',' + s + ',this.value)" placeholder="-"/>' +
-              '</div>' +
-              '<div class="mini-input-wrap">' +
-                '<div class="mini-label">RPE</div>' +
-                '<input class="mini-input rpe-input" type="number" min="1" max="10" value="' + sr + '" onchange="saveSetRpe(\'' + dStr + '\',\'' + ex.id + '\',' + s + ',this.value)" placeholder="-"/>' +
-              '</div>' +
-            '</div>' : '';
+          var inputs = '';
 
           setsHtml += '<div class="set-row">' +
             '<div class="set-check' + (isSetDone ? ' done' : '') + '" id="chk-' + ex.id + '-' + s + '" onclick="event.stopPropagation();toggleSetDone(\'' + dStr + '\',\'' + ex.id + '\',' + s + ')">✓</div>' +
             '<div class="set-num">SET ' + s + '</div>' +
-            '<div class="set-reps">' + (ex.reps ? ex.reps + ' REPS' : ex.time) + (suggestedWeight && s===1 ? suggestedWeight : '') + '</div>' +
+            '<div class="set-reps">' + (ex.reps ? ex.reps + ' REPS' : ex.time) + (suggestedWeight && s === 1 ? suggestedWeight : '') + '</div>' +
             inputs +
             '</div>';
         }
@@ -1547,7 +1524,7 @@ function toggleSetDone(dStr, exId, setNum) {
   if (allDone) {
     showToast('🔥 Exercise Complete!');
     // Update home screen workout card in real-time
-    setTimeout(function() {
+    setTimeout(function () {
       updateHomeWorkoutCard();
       // Also update calorie display in workout header
       updateWorkoutHeaderCalories(selectedWorkoutDay);
@@ -1693,7 +1670,7 @@ function renderDiet() {
     var expandHtml = (isExpanded && detailText) ? '<div class="meal-expanded-content" style="margin-left:20px;">' + detailText + '</div>' : '';
 
     var rowId = 'row-diet-' + (row.id || ri);
-    timelineHtml += '<div id="' + rowId + '" onclick="toggleMealDetail(\'' + row.id + '\')" class="stagger-item haptic-press tilt-card" style="animation-delay:' + (ri * 0.05) + 's;' + cursor + 'background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:11px;margin-bottom:6px;padding:11px 12px;display:flex;flex-direction:column;gap:4px;transition:all .3s ease;">'
+    timelineHtml += '<div id="' + rowId + '" onclick="toggleMealDetail(\'' + row.id + '\')" class="stagger-item haptic-press tilt-card" style="animation-delay:' + (ri * 0.05) + 's;' + cursor + 'background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:11px;margin-bottom:6px;padding:11px 12px;display:flex;flex-direction:column;gap:4px;transition:transform 0.3s cubic-bezier(0.3, 1, 0.3, 1);">'
       + '<div style="display:flex;align-items:flex-start;gap:10px;">'
       + '<div style="min-width:60px;font-size:.57rem;font-family:JetBrains Mono,monospace;color:var(--sub);line-height:1.4;padding-top:2px;flex-shrink:0;">' + row.t + '</div>'
       + '<div style="font-size:1rem;flex-shrink:0;margin-top:1px;">' + row.icon + '</div>'
@@ -1739,18 +1716,18 @@ function renderDiet() {
     var lunchText = (dm.lunch || '---').replace(/<strong>.*?<\/strong>/g, '').trim();
     var dinnerText = (dm.dinner || '---').replace(/<strong>.*?<\/strong>/g, '').trim();
     var snackText = (dm.supp_snack || '---');
-    
+
     tableRows += '<tr><td>' + dayK.toUpperCase() + '</td><td>' + preG + '</td><td>' + postW + '</td><td>' + lunchText + '</td><td>' + dinnerText + '</td><td>' + snackText + '</td></tr>';
   }
 
   document.getElementById('page-diet').innerHTML =
     // Completion summary banner
-    (function() {
+    (function () {
       var MEAL_IDS = ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'];
       var SUPP_IDS = ['supp_fatburner', 'supp_jeera1', 'supp_tslim', 'supp_centrum', 'supp_acv1', 'supp_isab2', 'supp_gt'];
       var mDone = 0, sDone = 0;
-      MEAL_IDS.forEach(function(id) { if (mealData[id] === true) mDone++; });
-      SUPP_IDS.forEach(function(id) { if (mealData[id] === true) sDone++; });
+      MEAL_IDS.forEach(function (id) { if (mealData[id] === true) mDone++; });
+      SUPP_IDS.forEach(function (id) { if (mealData[id] === true) sDone++; });
       var allMDone = mDone >= MEAL_IDS.length; var allSDone = sDone >= SUPP_IDS.length;
       var bannerColor = (allMDone && allSDone) ? 'var(--green)' : (mDone > 0 || sDone > 0) ? 'var(--gold)' : 'var(--sub)';
       var emoji = (allMDone && allSDone) ? '🏆' : (mDone > 0 || sDone > 0) ? '⚡' : '🎯';
@@ -1885,7 +1862,7 @@ function generateWeightChartSVG(pts) {
   }
 
   var barsHtml = '';
-  var avgWeight = wts.reduce(function(a, b) { return a + b; }) / wts.length;
+  var avgWeight = wts.reduce(function (a, b) { return a + b; }) / wts.length;
 
   for (var i = 0; i < pts.length; i++) {
     var x = getX(i);
@@ -1900,10 +1877,10 @@ function generateWeightChartSVG(pts) {
     // Bar with gradient
     var barId = 'bar-' + i;
     barsHtml += '<defs><linearGradient id="grad' + i + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + barColor + '" stop-opacity="0.9"/><stop offset="100%" stop-color="' + barColor + '" stop-opacity="0.6"/></linearGradient></defs>';
-    
+
     // Main bar with shadow
     barsHtml += '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + barHeight + '" fill="url(#grad' + i + ')" rx="3" ry="3" opacity="0.85" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.4))" />';
-    
+
     // Highlight bar on hover effect
     barsHtml += '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + barHeight + '" fill="' + lightColor + '" rx="3" ry="3" opacity="0" class="bar-hover" style="transition:opacity 0.2s;" />';
 
@@ -1940,8 +1917,8 @@ function generateWeightChartSVG(pts) {
 
 function generateMuscleChartSVG() {
   var labels = ["Back", "Biceps", "Chest", "Triceps", "Legs", "Abs", "Shoulders"];
-  var counts = { Back:0, Biceps:0, Chest:0, Triceps:0, Legs:0, Abs:0, Shoulders:0 };
-  
+  var counts = { Back: 0, Biceps: 0, Chest: 0, Triceps: 0, Legs: 0, Abs: 0, Shoulders: 0 };
+
   // Scraper through workout data for past 7 days
   var data = DB._getData();
   data.slice(-7).forEach(day => {
@@ -1962,19 +1939,19 @@ function generateMuscleChartSVG() {
 
   var max = Math.max.apply(null, Object.values(counts)) || 1;
   var w = 340, h = 160, pad = 30;
-  var barW = (w - pad*2) / labels.length;
+  var barW = (w - pad * 2) / labels.length;
 
-  var bars = labels.map(function(l, i) {
+  var bars = labels.map(function (l, i) {
     var val = counts[l];
-    var barH = (val / max) * (h - pad*2);
+    var barH = (val / max) * (h - pad * 2);
     var x = pad + i * barW;
     var y = h - pad - barH;
-    return '<rect x="'+(x+5)+'" y="'+y+'" width="'+(barW-10)+'" height="'+barH+'" fill="var(--fire)" opacity="0.6" rx="4"/>' +
-           '<text x="'+(x+barW/2)+'" y="'+(h-10)+'" fill="var(--sub)" font-size="8" text-anchor="middle">'+l.toUpperCase()+'</text>' +
-           '<text x="'+(x+barW/2)+'" y="'+(y-5)+'" fill="var(--fire)" font-size="9" font-weight="700" text-anchor="middle">'+val+'</text>';
+    return '<rect x="' + (x + 5) + '" y="' + y + '" width="' + (barW - 10) + '" height="' + barH + '" fill="var(--fire)" opacity="0.6" rx="4"/>' +
+      '<text x="' + (x + barW / 2) + '" y="' + (h - 10) + '" fill="var(--sub)" font-size="8" text-anchor="middle">' + l.toUpperCase() + '</text>' +
+      '<text x="' + (x + barW / 2) + '" y="' + (y - 5) + '" fill="var(--fire)" font-size="9" font-weight="700" text-anchor="middle">' + val + '</text>';
   }).join('');
 
-  return '<svg viewBox="0 0 '+w+' '+h+'">'+bars+'</svg>';
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '">' + bars + '</svg>';
 }
 
 function renderProgress() {
@@ -2028,27 +2005,24 @@ function renderProgress() {
     // 1. MAS Score card (filled async by renderHealthMetrics)
     '<div id="bio-hud-container"></div>' +
 
-    // Total lost badge
-    (totalLost ? '<div style="margin:0 16px 4px;padding:10px 16px;background:' + (parseFloat(totalLost) > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') + ';border:1px solid ' + totalLostColor + '44;border-radius:12px;display:flex;align-items:center;justify-content:space-between;">' +
+    // 2. Weight Progress - stats grid (now 8 cards: 3+3+2)
+    '<div class="section">' +
+    '<div class="sec-h"><div class="sec-h-title">⚖️ WEIGHT PROGRESS</div></div>' +
+    '<div class="progress-stats">' +
+    '<div class="prog-stat" onclick="editWeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (lastWtObj ? lastWtObj.kg : '--') + '</div><div class="prog-stat-lbl">CURRENT (KG)</div></div>' +
+    '<div class="prog-stat" onclick="editTarget()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--blue);">' + (targetWt || '--') + '</div><div class="prog-stat-lbl">TARGET (KG)</div></div>' +
+    '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--red);">' + needsToLose + '</div><div class="prog-stat-lbl">TO LOSE (KG)</div></div>' +
+    '<div class="prog-stat" onclick="editHeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--green);">' + (prof.height || '--') + '</div><div class="prog-stat-lbl">HEIGHT (CM)</div></div>' +
+    '<div class="prog-stat" onclick="editGender()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--purple); font-size:1rem;">' + (prof.gender || 'male').toUpperCase() + '</div><div class="prog-stat-lbl">GENDER</div></div>' +
+    '<div class="prog-stat" onclick="editAge()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (prof.age || '--') + '</div><div class="prog-stat-lbl">AGE</div></div>' +
+    '</div>' +
+    '</div>' +
+
+    // Total lost badge (moved between Weight Progress and Body Metrics)
+    (totalLost ? '<div style="margin:2px 16px 14px;padding:10px 16px;background:' + (parseFloat(totalLost) > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') + ';border:1px solid ' + totalLostColor + '44;border-radius:12px;display:flex;align-items:center;justify-content:space-between;">' +
       '<span style="font-size:.85rem;font-weight:900;color:' + totalLostColor + ';letter-spacing:1px;">' + totalLostLabel + '</span>' +
       '<span style="font-size:.6rem;color:var(--sub);">DAY ' + dayNum + ' / 90  •  ' + daysLeft + ' TO GO</span>' +
       '</div>' : '') +
-
-    // 2. Weight Progress - stats grid (now 8 cards: 3+3+2)
-    '<div class="section">' +
-      '<div class="sec-h"><div class="sec-h-title">⚖️ WEIGHT PROGRESS</div></div>' +
-      '<div class="progress-stats" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">' +
-        '<div class="prog-stat" onclick="editWeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (lastWtObj ? lastWtObj.kg : '--') + '</div><div class="prog-stat-lbl">CURRENT (KG)</div></div>' +
-        '<div class="prog-stat" onclick="editTarget()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--blue);">' + (targetWt || '--') + '</div><div class="prog-stat-lbl">TARGET (KG)</div></div>' +
-        '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--red);">' + needsToLose + '</div><div class="prog-stat-lbl">TO LOSE (KG)</div></div>' +
-        '<div class="prog-stat" onclick="editHeight()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--green);">' + (prof.height || '--') + '</div><div class="prog-stat-lbl">HEIGHT (CM)</div></div>' +
-        '<div class="prog-stat" onclick="editGender()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--purple); font-size:1rem;">' + (prof.gender || 'male').toUpperCase() + '</div><div class="prog-stat-lbl">GENDER</div></div>' +
-        '<div class="prog-stat" onclick="editAge()" style="cursor:pointer;"><div class="prog-stat-val" style="color:var(--gold);">' + (prof.age || '--') + '</div><div class="prog-stat-lbl">AGE</div></div>' +
-        '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--fire);">' + daysLeft + '</div><div class="prog-stat-lbl">🏁 DAYS LEFT</div></div>' +
-        '<div class="prog-stat"><div class="prog-stat-val" style="color:var(--gold);">&#x1f525; ' + streak + '</div><div class="prog-stat-lbl">DAY STREAK</div></div>' +
-        '<div class="prog-stat"><div class="prog-stat-val" style="color:' + totalLostColor + '; font-size:1rem;">' + (totalLost ? (parseFloat(totalLost) > 0 ? '↓' : '↑') + Math.abs(parseFloat(totalLost)) + ' kg' : '--') + '</div><div class="prog-stat-lbl">📉 TOTAL LOST</div></div>' +
-      '</div>' +
-    '</div>' +
 
     // 3. Body Metrics 16-card grid (BMI, Body Fat, etc.) - filled async
     '<div id="adv-metrics" class="metrics-grid"></div>' +
@@ -2058,63 +2032,55 @@ function renderProgress() {
 
     // 5. Neural Predictions (60/90 day)
     '<div class="section">' +
-      '<div class="sec-h"><div class="sec-h-title">🧠 NEURAL PREDICTIONS</div></div>' +
-      '<div class="tilt-card" style="padding:15px; background:rgba(255,107,26,0.05); border:1px dashed var(--fire); border-radius:14px;">' +
-        '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
-          '<div><div style="font-size:0.5rem; color:var(--sub)">60 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--fire);">' + weightPred60 + ' kg</div></div>' +
-          '<div><div style="font-size:0.5rem; color:var(--sub)">90 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--gold);">' + weightPred90 + ' kg</div></div>' +
-          '<div style="text-align:right;"><div style="font-size:0.5rem; color:var(--sub)">TREND</div><div style="font-size:1.1rem; font-weight:700; color:var(--green);">' + (isPlat ? 'STALL' : 'LOSS') + '</div></div>' +
-        '</div>' +
-        '<div style="font-size:0.6rem; color:var(--sub2); font-style:italic;">Predictions calculated via linear regression of past 14 days activity.</div>' +
-      '</div>' +
+    '<div class="sec-h"><div class="sec-h-title">🧠 NEURAL PREDICTIONS</div></div>' +
+    '<div class="tilt-card" style="margin:0 16px; padding:15px; background:rgba(255,107,26,0.05); border:1px dashed var(--fire); border-radius:14px;">' +
+    '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
+    '<div><div style="font-size:0.5rem; color:var(--sub)">60 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--fire);">' + weightPred60 + ' kg</div></div>' +
+    '<div><div style="font-size:0.5rem; color:var(--sub)">90 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--gold);">' + weightPred90 + ' kg</div></div>' +
+    '<div style="text-align:right;"><div style="font-size:0.5rem; color:var(--sub)">TREND</div><div style="font-size:1.1rem; font-weight:700; color:var(--green);">' + (isPlat ? 'STALL' : 'LOSS') + '</div></div>' +
+    '</div>' +
+    '<div style="font-size:0.6rem; color:var(--sub2); font-style:italic;">Predictions calculated via linear regression of past 14 days activity.</div>' +
+    '</div>' +
     '</div>' +
 
     // 6. Mini analytics cards (Recovery/Plateau/1RM/Forecast)
     '<div class="analytics-grid">' +
-      '<div class="analytics-card tilt-card">' +
-        '<div class="an-label">RECOVERY READINESS</div>' +
-        '<div class="an-val" style="color:var(--green)">' + recIndex + '%</div>' +
-        '<div class="an-trend ' + (recIndex > 70 ? 'up' : 'down') + '">' + (recIndex > 70 ? '▲ OPTIMAL' : '▼ CAUTION') + '</div>' +
-      '</div>' +
-      '<div class="analytics-card tilt-card">' +
-        '<div class="an-label">PLATEAU STATUS</div>' +
-        '<div class="an-val" style="color:' + (isPlat ? 'var(--red)' : 'var(--blue)') + '">' + (isPlat ? 'DETECTED' : 'CLEAR') + '</div>' +
-        '<div class="an-trend">' + (isPlat ? 'SWITCH PROGRAM' : 'KEEP GRINDING') + '</div>' +
-      '</div>' +
-      '<div class="analytics-card tilt-card">' +
-        '<div class="an-label">ESTIMATED 1-RM</div>' +
-        '<div class="an-val" style="color:var(--gold)">' + (best1rm || '---') + ' <span style="font-size:0.6rem">KG</span></div>' +
-        '<div class="an-trend">BEST RECENT LIFT</div>' +
-      '</div>' +
-      '<div class="analytics-card tilt-card">' +
-        '<div class="an-label">FORECAST (30D)</div>' +
-        '<div class="an-val" style="color:var(--fire)">' + weightPred30 + ' <span style="font-size:0.6rem">KG</span></div>' +
-        '<div class="an-trend">A.I PREDICTION</div>' +
-      '</div>' +
+    '<div class="analytics-card tilt-card">' +
+    '<div class="an-label">RECOVERY READINESS</div>' +
+    '<div class="an-val" style="color:var(--green)">' + recIndex + '%</div>' +
+    '<div class="an-trend ' + (recIndex > 70 ? 'up' : 'down') + '">' + (recIndex > 70 ? '▲ OPTIMAL' : '▼ CAUTION') + '</div>' +
+    '</div>' +
+    '<div class="analytics-card tilt-card">' +
+    '<div class="an-label">PLATEAU STATUS</div>' +
+    '<div class="an-val" style="color:' + (isPlat ? 'var(--red)' : 'var(--blue)') + '">' + (isPlat ? 'DETECTED' : 'CLEAR') + '</div>' +
+    '<div class="an-trend">' + (isPlat ? 'SWITCH PROGRAM' : 'KEEP GRINDING') + '</div>' +
     '</div>' +
 
-    // 7. Muscle Group Volume chart
-    '<div class="section">' +
-      '<div class="sec-h"><div class="sec-h-title">💪 MUSCLE GROUP VOLUME</div></div>' +
-      '<div class="tilt-card" style="padding:10px; border-radius:14px;">' + generateMuscleChartSVG() + '</div>' +
+    '<div class="analytics-card tilt-card">' +
+    '<div class="an-label">FORECAST (30D)</div>' +
+    '<div class="an-val" style="color:var(--fire)">' + weightPred30 + ' <span style="font-size:0.6rem">KG</span></div>' +
+    '<div class="an-trend">A.I PREDICTION</div>' +
     '</div>' +
+    '</div>' +
+
+    // 7. Muscle Group Volume chart removed
 
     // 8. Weight Trend chart
     '<div class="weight-chart" style="margin:20px 16px; padding:18px 16px; background:linear-gradient(135deg, rgba(255,107,26,0.08), rgba(88,198,255,0.05)); border:1px solid rgba(255,107,26,0.2); border-radius:18px; backdrop-filter:blur(10px);">' +
-      '<div class="weight-chart-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:0.9rem; font-weight:900; letter-spacing:1px; color:var(--gold);">📊 WEIGHT TREND <button onclick="DB.exportData()" style="background:rgba(255,107,26,0.2); border:1px solid rgba(255,107,26,0.3); color:var(--gold); font-size:.65rem; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:\'Bebas Neue\',sans-serif; letter-spacing:1px; font-weight:700; transition:all 0.3s;">⬇️ EXPORT</button></div>' +
-      '<div style="position:relative; height:240px;">' +
-        generateWeightChartSVG(chartWeights.slice(-15)) +
-      '</div>' +
+    '<div class="weight-chart-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:0.9rem; font-weight:900; letter-spacing:1px; color:var(--gold);">📊 WEIGHT TREND <button onclick="DB.exportData()" style="background:rgba(255,107,26,0.2); border:1px solid rgba(255,107,26,0.3); color:var(--gold); font-size:.65rem; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:\'Bebas Neue\',sans-serif; letter-spacing:1px; font-weight:700; transition:all 0.3s;">⬇️ EXPORT</button></div>' +
+    '<div style="position:relative; height:240px;">' +
+    generateWeightChartSVG(chartWeights.slice(-15)) +
+    '</div>' +
     '</div>' +
 
     // 9. Data Management
     '<div class="section" style="margin-bottom:100px;">' +
-      '<div class="sec-h"><div class="sec-h-title">⚙️ DATA MANAGEMENT</div></div>' +
-      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
-        '<button class="modal-btn" onclick="DB.exportCSV()" style="width:100%; border-color:var(--green); color:var(--green); font-size:0.7rem;">📊 EXCEL CSV</button>' +
-        '<button class="modal-btn" onclick="openImportModal()" style="width:100%; border-color:var(--purple); color:var(--purple); font-size:0.7rem;">🔄 RESTORE JSON</button>' +
-        '<button class="modal-btn" onclick="window.print()" style="width:100%; border-color:var(--blue); color:var(--blue); font-size:0.7rem; grid-column: span 2;">📄 DOWNLOAD PDF REPORT</button>' +
-      '</div>' +
+    '<div class="sec-h"><div class="sec-h-title">⚙️ DATA MANAGEMENT</div></div>' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 16px;">' +
+    '<button class="modal-btn" onclick="DB.exportCSV()" style="width:100%; border-color:var(--green); color:var(--green); font-size:0.7rem;">📊 EXCEL CSV</button>' +
+    '<button class="modal-btn" onclick="openImportModal()" style="width:100%; border-color:var(--purple); color:var(--purple); font-size:0.7rem;">🔄 RESTORE JSON</button>' +
+    '<button class="modal-btn" onclick="window.print()" style="width:100%; border-color:var(--blue); color:var(--blue); font-size:0.7rem; grid-column: span 2;">📄 DOWNLOAD PDF REPORT</button>' +
+    '</div>' +
     '</div>';
 
   setTimeout(function () {
@@ -2198,17 +2164,7 @@ function renderProgress() {
     var masColor = mas >= 90 ? 'var(--green)' : mas >= 70 ? 'var(--gold)' : 'var(--red)';
     var diagLogs = getCyberDiagnostics();
 
-    var hudHtml =
-      '<div class="tilt-card" style="margin:0 16px 16px; padding:16px; background:var(--card); border:1px solid var(--border2); border-radius:18px; display:flex; align-items:center; gap:16px; box-shadow:var(--shadow-3d);">' +
-      '<div class="mas-circle" style="width:60px; height:60px; border-width:3px; border-color:' + masColor + '; box-shadow: 0 0 15px ' + masColor + '44; flex-shrink:0;">' +
-      '<div class="mas-val" style="font-size:1.4rem;">' + mas + '</div>' +
-      '</div>' +
-      '<div>' +
-      '<div style="font-size:0.75rem; font-weight:900; letter-spacing:2px; color:' + masColor + ';">ADAPTIVE METABOLIC SCORE (MAS)</div>' +
-      '<div style="font-size:0.6rem; color:var(--sub); margin-top:2px;">SYS_STATUS: <span style="color:' + masColor + ';">' + (mas >= 90 ? 'ELITE_OPTIMIZED' : 'SUB_OPTIMAL') + '</span></div>' +
-      '<div style="font-size:0.55rem; color:var(--sub2); margin-top:4px;">Biological adherence tracking active.</div>' +
-      '</div>' +
-      '</div>';
+    var hudHtml = '';
 
     var container = document.getElementById('bio-hud-container');
     if (container) container.innerHTML = hudHtml;
@@ -2458,12 +2414,12 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
   var cycleAnalysisHtml = generateCycleAnalysisHtml();
   var advancedMetricsHtml = generateAdvancedMetricsHtml();
   var predictiveHtml = generatePredictiveInsights();
-  
-  document.getElementById('ai-insights-container').innerHTML = 
-    (projectionHtml || '') + 
-    insightsHtml + 
-    cycleAnalysisHtml + 
-    advancedMetricsHtml + 
+
+  document.getElementById('ai-insights-container').innerHTML =
+    (projectionHtml || '') +
+    insightsHtml +
+    cycleAnalysisHtml +
+    advancedMetricsHtml +
     predictiveHtml;
   document.getElementById('adv-metrics').innerHTML = metricsHtml;
 }
@@ -2499,34 +2455,34 @@ function calculateAdvancedMetrics(days) {
   var cycle = getCycleData(days);
   var weights = DB.weights().slice(-days);
   var profile = DB.profile();
-  
+
   var metrics = {
     // Water metrics
     waterTotal: 0,
     waterDays: 0,
     waterOptimal: 0,
     waterGoal: profile.waterGoal || 10,
-    
+
     // Diet metrics
     mealTotal: 0,
     mealDays: 0,
     mealAdherence: 0,
-    
+
     // Workout metrics
     workoutDays: 0,
     workoutAdherence: 0,
-    
+
     // Weight metrics
     weightStart: 0,
     weightEnd: 0,
     weightTrend: 0,
     weightDelta: 0,
-    
+
     // Calculated
     consistencyScore: 0,
     disciplineRating: ''
   };
-  
+
   cycle.forEach(function (day) {
     metrics.waterTotal += day.water;
     if (day.water > 0) metrics.waterDays++;
@@ -2539,33 +2495,33 @@ function calculateAdvancedMetrics(days) {
       metrics.weightEnd = day.weight;
     }
   });
-  
+
   metrics.waterAvg = (metrics.waterTotal / cycle.length).toFixed(1);
   metrics.mealAvg = (metrics.mealTotal / cycle.length).toFixed(1);
   metrics.mealAdherence = Math.round((metrics.mealDays / cycle.length) * 100);
   metrics.workoutAdherence = Math.round((metrics.workoutDays / cycle.length) * 100);
-  
+
   if (metrics.weightStart && metrics.weightEnd) {
     metrics.weightDelta = (metrics.weightEnd - metrics.weightStart).toFixed(1);
     metrics.weightTrend = (metrics.weightDelta / days * 7).toFixed(2); // Weekly trend
   }
-  
+
   var dScore = (metrics.mealAdherence * 0.35) + (metrics.workoutAdherence * 0.35) + ((metrics.waterDays / cycle.length) * 100 * 0.3);
   metrics.consistencyScore = Math.round(dScore);
-  
+
   if (metrics.consistencyScore >= 95) metrics.disciplineRating = 'ELITE';
   else if (metrics.consistencyScore >= 85) metrics.disciplineRating = 'EXCELLENT';
   else if (metrics.consistencyScore >= 75) metrics.disciplineRating = 'GOOD';
   else if (metrics.consistencyScore >= 50) metrics.disciplineRating = 'MODERATE';
   else metrics.disciplineRating = 'REQUIRES FOCUS';
-  
+
   return metrics;
 }
 
 function detectPatterns() {
   var week7 = calculateAdvancedMetrics(7);
   var week14 = calculateAdvancedMetrics(14);
-  
+
   var patterns = {
     waterTrend: '',
     mealTrend: '',
@@ -2574,7 +2530,7 @@ function detectPatterns() {
     weakPoint: '',
     consistency: ''
   };
-  
+
   // Water trend detection
   if (week7.waterAvg > week7.waterGoal * 0.8) {
     patterns.waterTrend = 'CONSISTENT HYDRATION';
@@ -2583,7 +2539,7 @@ function detectPatterns() {
   } else {
     patterns.waterTrend = 'DEHYDRATION PATTERN';
   }
-  
+
   // Meal adherence trend
   if (week7.mealAdherence >= 85) {
     patterns.mealTrend = 'DISCIPLINED DIET';
@@ -2592,7 +2548,7 @@ function detectPatterns() {
   } else {
     patterns.mealTrend = 'INCONSISTENT DIET';
   }
-  
+
   // Workout pattern
   if (week7.workoutAdherence >= 85) {
     patterns.workoutTrend = 'COMMITTED TRAINING';
@@ -2601,15 +2557,15 @@ function detectPatterns() {
   } else {
     patterns.workoutTrend = 'SKIPPED WORKOUTS';
   }
-  
+
   // Identify weak point
   var scores = {
     'Water': week7.waterDays / 7 * 100,
     'Diet': week7.mealAdherence,
     'Workouts': week7.workoutAdherence
   };
-  patterns.weakPoint = Object.keys(scores).reduce(function(a, b) { return scores[a] < scores[b] ? a : b; });
-  
+  patterns.weakPoint = Object.keys(scores).reduce(function (a, b) { return scores[a] < scores[b] ? a : b; });
+
   // Consistency over 14 days
   if (week7.consistencyScore === week14.consistencyScore) {
     patterns.consistency = 'STABLE PERFORMANCE';
@@ -2618,21 +2574,21 @@ function detectPatterns() {
   } else {
     patterns.consistency = 'DECLINING TREND';
   }
-  
+
   return patterns;
 }
 
 function generateAIInsights(m) {
   var ins = [];
   var ctx = m.context || {};
-  
+
   // Load cycle data for analysis
   var week7 = calculateAdvancedMetrics(7);
   var week14 = calculateAdvancedMetrics(14);
   var patterns = detectPatterns();
   var profile = DB.profile();
   var weights = DB.weights();
-  
+
   // ═══ ADVANCED WEIGHT TRACKING ANALYSIS ═══
   var weightAnalysis = {
     currentWeight: m.weight,
@@ -2649,7 +2605,7 @@ function generateAIInsights(m) {
     viscIdx: m.viscIdx,
     tbwPct: m.tbwPct
   };
-  
+
   // ═══ TIER 1: CRITICAL HEALTH ALERTS ═══
   if (weightAnalysis.bmi >= 35) {
     ins.push({
@@ -2664,7 +2620,7 @@ function generateAIInsights(m) {
       action: 'Visceral Index: ' + weightAnalysis.viscIdx + ' (CRITICAL). Organ fat detected. Action: Eliminate refined carbs, increase fiber, add HIIT. This fat responds fastest to lifestyle.'
     });
   }
-  
+
   // ═══ TIER 2: BODY COMPOSITION ANALYSIS ═══
   if (weightAnalysis.weeklyDelta < -1.5) {
     ins.push({
@@ -2673,7 +2629,7 @@ function generateAIInsights(m) {
       action: 'Loss speed: ' + Math.abs(weightAnalysis.weeklyDelta).toFixed(2) + 'kg/week = UNSAFE. Risk: Muscle loss (current: ' + weightAnalysis.muscleMass.toFixed(1) + 'kg). Protein: ' + (weightAnalysis.currentWeight * 2.5).toFixed(0) + 'g/day. Slow pace preserves muscle.'
     });
   }
-  
+
   if (m.muscleRate < (m.gender === 'male' ? 35 : 28)) {
     ins.push({
       icon: '💪',
@@ -2681,7 +2637,7 @@ function generateAIInsights(m) {
       action: 'Muscle: ' + m.muscleMass.toFixed(1) + 'kg (' + m.muscleRate.toFixed(1) + '% of body). Add strength training 4x/week + protein ' + (weightAnalysis.currentWeight * 2.0).toFixed(0) + 'g/day. Muscle increases metabolism.'
     });
   }
-  
+
   // ═══ TIER 3: BODY FAT ANALYSIS ═══
   var bfTarget = m.gender === 'male' ? 15 : 22;
   if (m.bfr > bfTarget + 10) {
@@ -2697,7 +2653,7 @@ function generateAIInsights(m) {
       action: 'Body Fat: ' + m.bfr.toFixed(1) + '% (Target achieved!). Muscle: ' + m.muscleMass.toFixed(1) + 'kg. Focus: Maintenance. Add 200kcal, prioritize protein & strength.'
     });
   }
-  
+
   // ═══ TIER 4: BMI & WEIGHT TRACKING ═══
   if (weightAnalysis.bmi < 18.5) {
     ins.push({
@@ -2728,17 +2684,17 @@ function generateAIInsights(m) {
       action: 'Trend: ' + direction + ' ' + Math.abs(week7.weightTrend).toFixed(2) + 'kg/week. Current: ' + weightAnalysis.currentWeight.toFixed(1) + 'kg → Goal: ' + weightAnalysis.targetWeight + 'kg. ETA: ' + etalabel + ' weeks.'
     });
   }
-  
+
   // ═══ TIER 5: METABOLIC INSIGHTS ═══
   var maintenance = Math.round(m.bmr * 1.375);
   var deficitCurrent = Math.abs(Math.round(maintenance - ((Math.abs(weightAnalysis.weeklyDelta || 0.5) * 3500) / 7)));
-  
+
   ins.push({
     icon: '🔋',
     msg: 'METABOLIC RATE: BMR ' + Math.round(m.bmr) + ' | TDEE ' + maintenance + ' kcal',
     action: 'Basal (rest): ' + Math.round(m.bmr) + 'kcal. Total: ' + maintenance + 'kcal/day. Current deficit: ' + deficitCurrent + 'kcal/day → ' + (deficitCurrent * 7 / 3500).toFixed(1) + 'kg/week loss potential. For weight goal, target: ' + (Math.round(maintenance * 0.85)) + 'kcal/day.'
   });
-  
+
   // ═══ TIER 6: BIOLOGICAL AGE ═══
   var ageStatus = weightAnalysis.bodyAge > weightAnalysis.chronoAge ? 'AGED' : 'REVERSED';
   var ageDiff = Math.abs(weightAnalysis.bodyAge - weightAnalysis.chronoAge);
@@ -2755,7 +2711,7 @@ function generateAIInsights(m) {
       action: 'Age reversed ' + ageDiff + ' years! Metrics excellent: Fat ' + m.bfr.toFixed(1) + '%, TBW ' + m.tbwPct.toFixed(1) + '%, Muscle ' + m.muscleRate.toFixed(1) + '%. Maintain this consistency.'
     });
   }
-  
+
   // ═══ TIER 7: HYDRATION & CELLULAR ═══
   if (m.tbwPct < 50) {
     ins.push({
@@ -2764,14 +2720,14 @@ function generateAIInsights(m) {
       action: 'Body water: ' + m.tbwPct.toFixed(1) + '% (target: 52-58%). Add 2-3 glasses/day for 7 days. Retest. Proper hydration = faster metabolism & better fat loss.'
     });
   }
-  
+
   // ═══ TIER 8: WEIGHT HISTORY ═══
   if (weights.length >= 7) {
     var firstWeight = weights[0].kg;
     var totalLoss = firstWeight - weightAnalysis.currentWeight;
     var totalDays = (new Date(weights[weights.length - 1].date) - new Date(weights[0].date)) / (1000 * 60 * 60 * 24);
     var avgWeeklyLoss = (totalLoss / (totalDays / 7));
-    
+
     if (totalLoss > 0 && avgWeeklyLoss > 0) {
       var etaWeeks = Math.ceil((weightAnalysis.remaining) / (avgWeeklyLoss || 0.5));
       ins.push({
@@ -2781,7 +2737,7 @@ function generateAIInsights(m) {
       });
     }
   }
-  
+
   // ═══ PRIORITY & CLEANUP ═══
   if (ins.length === 0) {
     ins.push({
@@ -2790,12 +2746,12 @@ function generateAIInsights(m) {
       action: 'Weight: ' + weightAnalysis.currentWeight.toFixed(1) + 'kg | Fat: ' + m.bfr.toFixed(1) + '% | Muscle: ' + m.muscleMass.toFixed(1) + 'kg | Age: ' + m.bodyAge + 'yrs | TBW: ' + m.tbwPct.toFixed(1) + '%. Elite metrics. Focus: advanced periodization & recovery.'
     });
   }
-  
+
   var priority = { '🚨': 0, '⚠️': 1, '⚡': 2, '💪': 3, '🔥': 4, '📊': 5, '⚖️': 6, '📈': 7, '🔋': 8, '🎂': 9, '✨': 10, '💧': 11, '🎯': 12, '🏆': 13 };
   ins.sort(function (a, b) {
     return (priority[a.icon] || 99) - (priority[b.icon] || 99);
   });
-  
+
   return ins.slice(0, 8);
 }
 
@@ -2820,21 +2776,21 @@ function generateCycleAnalysisHtml() {
   var week14 = calculateAdvancedMetrics(14);
   var month30 = calculateAdvancedMetrics(30);
   var patterns = detectPatterns();
-  
+
   var html = '<div class="intelligence-section" style="margin:20px 16px; padding:16px; background:linear-gradient(135deg, rgba(34,197,94,0.08), rgba(255,107,26,0.05)); border:1px solid rgba(255,107,26,0.2); border-radius:16px; backdrop-filter:blur(10px);">';
-  
+
   // Header
   html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:6px;">🧠 CYCLE INTELLIGENCE</div>';
-  
+
   // Three-period comparison
   html += '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">';
-  
+
   html += '<div style="background:rgba(34,197,94,0.1); border:1px solid var(--green); border-radius:10px; padding:10px; text-align:center;">';
   html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">7-DAY SCORE</div>';
   html += '<div style="font-size:1.2rem; color:var(--green); font-weight:900; margin:4px 0;">' + week7.consistencyScore + '%</div>';
   html += '<div style="font-size:0.6rem; color:var(--sub);">W:' + week7.waterDays + ' D:' + week7.mealAdherence + '% T:' + week7.workoutAdherence + '%</div>';
   html += '</div>';
-  
+
   html += '<div style="background:rgba(255,107,26,0.1); border:1px solid var(--gold); border-radius:10px; padding:10px; text-align:center;">';
   html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">14-DAY TREND</div>';
   html += '<div style="font-size:1.2rem; color:var(--gold); font-weight:900; margin:4px 0;">' + week14.consistencyScore + '%</div>';
@@ -2842,15 +2798,15 @@ function generateCycleAnalysisHtml() {
     html += '<div style="font-size:0.6rem; color:var(--fire);">Weight: ' + (week14.weightDelta > 0 ? '+' : '') + week14.weightDelta + 'kg</div>';
   }
   html += '</div>';
-  
+
   html += '<div style="background:rgba(100,200,255,0.1); border:1px solid var(--blue); border-radius:10px; padding:10px; text-align:center;">';
   html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">30-DAY AVG</div>';
   html += '<div style="font-size:1.2rem; color:var(--blue); font-weight:900; margin:4px 0;">' + month30.consistencyScore + '%</div>';
   html += '<div style="font-size:0.6rem; color:var(--sub);">Stability: ' + (patterns.consistency === 'STABLE PERFORMANCE' ? '✓' : patterns.consistency === 'IMPROVING TREND' ? '↗' : '↘') + '</div>';
   html += '</div>';
-  
+
   html += '</div>';
-  
+
   // Key patterns
   html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; font-size:0.65rem;">';
   html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--green);"><strong>🌊</strong> ' + patterns.waterTrend + '</div>';
@@ -2858,25 +2814,25 @@ function generateCycleAnalysisHtml() {
   html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--fire);"><strong>💪</strong> ' + patterns.workoutTrend + '</div>';
   html += '<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:8px; border-left:3px solid var(--purple);"><strong>⚡</strong> Weak: ' + patterns.weakPoint + '</div>';
   html += '</div>';
-  
+
   // Discipline rating with visual
   var ratingColor = week7.disciplineRating === 'ELITE' ? 'var(--green)' : (week7.disciplineRating === 'EXCELLENT' ? 'var(--gold)' : 'var(--sub)');
   html += '<div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid ' + ratingColor + '44; margin-bottom:8px;">';
   html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">DISCIPLINE RATING</div>';
   html += '<div style="display:flex; align-items:center; gap:8px; margin-top:4px;">';
-  
+
   var stars = '';
   var ratingVal = week7.disciplineRating === 'ELITE' ? 5 : (week7.disciplineRating === 'EXCELLENT' ? 4 : (week7.disciplineRating === 'GOOD' ? 3 : 2));
   for (var s = 0; s < ratingVal; s++) stars += '⭐';
   for (var s = ratingVal; s < 5; s++) stars += '☆';
-  
+
   html += '<div style="font-size:0.9rem; color:' + ratingColor + '; font-weight:900;">' + stars + '</div>';
   html += '<div style="flex:1; font-size:0.65rem; color:var(--sub);">' + week7.disciplineRating + ' | Score: ' + week7.consistencyScore + '/100</div>';
   html += '</div>';
   html += '</div>';
-  
+
   html += '</div>';
-  
+
   return html;
 }
 
@@ -2884,31 +2840,31 @@ function generatePredictiveInsights() {
   var profile = DB.profile();
   var weights = DB.weights();
   var week7 = calculateAdvancedMetrics(7);
-  
+
   if (weights.length < 3 || !profile.targetWeight) {
     return '<div style="padding:10px; font-size:0.7rem; color:var(--sub); text-align:center;">Log more data for predictive analytics...</div>';
   }
-  
+
   var latest = weights[weights.length - 1].kg;
   var current = latest;
   var target = parseFloat(profile.targetWeight);
   var weeklyRate = parseFloat(week7.weightTrend) || 0;
-  
+
   var html = '<div class="prediction-card" style="margin:20px 16px; padding:16px; background:linear-gradient(135deg, rgba(168,107,207,0.1), rgba(88,198,255,0.05)); border:1px solid rgba(168,107,207,0.2); border-radius:16px;">';
-  
+
   html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--purple); margin-bottom:12px; display:flex; align-items:center; gap:6px;">🔮 PREDICTIVE ANALYTICS</div>';
-  
+
   if (weeklyRate < -0.3) {
     var weeksRemaining = Math.ceil((current - target) / Math.abs(weeklyRate));
     var projDate = new Date();
     projDate.setDate(projDate.getDate() + (weeksRemaining * 7));
-    
+
     html += '<div style="background:rgba(34,197,94,0.1); padding:12px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--green);">';
     html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">PROJECTED GOAL DATE</div>';
     html += '<div style="font-size:1.1rem; font-weight:900; color:var(--green); margin-top:4px;">📅 ' + toLocalDate(projDate) + '</div>';
     html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:4px;">At current rate: ' + Math.abs(weeklyRate).toFixed(2) + 'kg/week</div>';
     html += '</div>';
-    
+
     html += '<div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; margin-bottom:10px; font-size:0.7rem;">';
     html += '<strong>📊 Weight Loss Physics:</strong><br>';
     html += 'Current: ' + current.toFixed(1) + 'kg | Target: ' + target + 'kg | Remaining: ' + (current - target).toFixed(1) + 'kg<br>';
@@ -2927,9 +2883,9 @@ function generatePredictiveInsights() {
     html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:6px;">Body recomposition in progress. Track body measurements & photos for better progress indication.</div>';
     html += '</div>';
   }
-  
+
   html += '</div>';
-  
+
   return html;
 }
 
@@ -2940,48 +2896,43 @@ function generatePredictiveInsights() {
 function generateAdvancedMetricsHtml() {
   var week7 = calculateAdvancedMetrics(7);
   var profile = DB.profile();
-  
+
   var html = '<div class="advanced-metrics-section" style="margin:20px 16px; padding:16px; background:rgba(255,107,26,0.05); border:1px solid rgba(255,107,26,0.15); border-radius:16px;">';
-  
+
   html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--fire); margin-bottom:12px;">📊 ADVANCED METRICS (7D AVG)</div>';
-  
-  html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">';
-  
+
+  html += '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">';
+
   // Water metrics
-  html += '<div style="background:rgba(88,198,255,0.1); padding:10px; border-radius:10px; border-left:3px solid var(--blue);">';
-  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">💧 HYDRATION</div>';
-  html += '<div style="font-size:0.95rem; color:var(--blue); font-weight:900;">'+week7.waterAvg+'L/day</div>';
-  html += '<div style="font-size:0.6rem; color:var(--sub);">Goal: '+week7.waterGoal+' glasses</div>';
+  html += '<div style="background:rgba(88,198,255,0.1); padding:8px 4px; border-radius:10px; border-left:3px solid var(--blue); margin-bottom: 2px; text-align: center;">';
+  html += '<div style="font-size:0.45rem; color:var(--sub); font-weight:700;">💧 HYDRATION</div>';
+  html += '<div style="font-size:0.8rem; color:var(--blue); font-weight:900; margin-top:2px;">' + week7.waterAvg + 'L/day</div>';
+  html += '<div style="font-size:0.45rem; color:var(--sub);">' + week7.waterGoal + ' glasses</div>';
   html += '</div>';
-  
+
   // Diet adherence
-  html += '<div style="background:rgba(255,184,82,0.1); padding:10px; border-radius:10px; border-left:3px solid var(--gold);">';
-  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">🍱 DIET ADHERENCE</div>';
-  html += '<div style="font-size:0.95rem; color:var(--gold); font-weight:900;">'+week7.mealAdherence+'%</div>';
-  html += '<div style="font-size:0.6rem; color:var(--sub);">'+week7.mealDays+'/7 days tracked</div>';
+  html += '<div style="background:rgba(255,184,82,0.1); padding:8px 4px; border-radius:10px; border-left:3px solid var(--gold); margin-bottom: 2px; text-align: center;">';
+  html += '<div style="font-size:0.45rem; color:var(--sub); font-weight:700;">🍱 DIET ADHERE</div>';
+  html += '<div style="font-size:0.8rem; color:var(--gold); font-weight:900; margin-top:2px;">' + week7.mealAdherence + '%</div>';
+  html += '<div style="font-size:0.45rem; color:var(--sub);">' + week7.mealDays + '/7 days tracked</div>';
   html += '</div>';
-  
-  // Workout adherence
-  html += '<div style="background:rgba(255,107,26,0.1); padding:10px; border-radius:10px; border-left:3px solid var(--fire);">';
-  html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">🏋️ TRAINING ADHERENCE</div>';
-  html += '<div style="font-size:0.95rem; color:var(--fire); font-weight:900;">'+week7.workoutAdherence+'%</div>';
-  html += '<div style="font-size:0.6rem; color:var(--sub);">'+week7.workoutDays+'/7 days completed</div>';
-  html += '</div>';
-  
+
+  // Workout adherence card removed
+
   // Weight trend
   if (week7.weightDelta !== '0' && week7.weightDelta !== 0) {
     var trendColor = parseFloat(week7.weightDelta) < 0 ? 'var(--green)' : 'var(--red)';
-    html += '<div style="background:rgba(34,197,94,0.1); padding:10px; border-radius:10px; border-left:3px solid '+trendColor+';">';
-    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">⚖️ WEIGHT DELTA</div>';
-    html += '<div style="font-size:0.95rem; color:'+trendColor+'; font-weight:900;">' + (parseFloat(week7.weightDelta) > 0 ? '+' : '') + week7.weightDelta + 'kg</div>';
-    html += '<div style="font-size:0.6rem; color:var(--sub);">7-day change</div>';
+    html += '<div style="background:rgba(34,197,94,0.1); padding:8px 4px; border-radius:10px; border-left:3px solid ' + trendColor + '; margin-bottom: 2px; text-align: center;">';
+    html += '<div style="font-size:0.45rem; color:var(--sub); font-weight:700;">⚖️ WT DELTA</div>';
+    html += '<div style="font-size:0.8rem; color:' + trendColor + '; font-weight:900; margin-top:2px;">' + (parseFloat(week7.weightDelta) > 0 ? '+' : '') + week7.weightDelta + 'kg</div>';
+    html += '<div style="font-size:0.45rem; color:var(--sub);">7-day change</div>';
     html += '</div>';
   }
-  
+
   html += '</div>';
-  
+
   html += '</div>';
-  
+
   return html;
 }
 
@@ -3007,8 +2958,8 @@ function setupSave() {
   if (!height) { showToast('Enter your height for BMI!'); return; }
   if (!age) { showToast('Enter your age for accuracy!'); return; }
 
-  DB.setProfile({ 
-    name: name, weight: weight, targetWeight: targetWeight, 
+  DB.setProfile({
+    name: name, weight: weight, targetWeight: targetWeight,
     height: height, age: age, gender: gender, waterGoal: waterGoal,
     startWeight: weight, bodyFat: bodyFat, goalMode: goalMode
   });
@@ -3793,13 +3744,13 @@ function initSplash() {
   directive.style.fontFamily = "'JetBrains Mono', monospace";
   directive.style.wordWrap = 'break-word';
   directive.innerHTML = '<span style="color:var(--fire); font-weight:800; letter-spacing:2px; display:block; margin-bottom:5px;">DIRECTIVE</span>' + quote.toUpperCase();
-  
+
   if (status) status.parentNode.appendChild(directive);
 
   setTimeout(() => { if (status) status.textContent = "DECRYPTING BIO-METRICS..."; }, 400);
   setTimeout(() => { if (status) status.textContent = "SYNCING WITH CORE..."; }, 1000);
-  setTimeout(() => { 
-    directive.style.opacity = '1'; 
+  setTimeout(() => {
+    directive.style.opacity = '1';
     if (status) status.textContent = "SYSTEM READY";
   }, 1800);
 
@@ -3852,3 +3803,4 @@ function updateTopbar() {
   } catch (e) { }
 }
 setInterval(updateTopbar, 10000);
+
