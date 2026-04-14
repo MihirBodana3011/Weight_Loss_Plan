@@ -642,12 +642,31 @@ button.challenge-btn.start-btn:active {
 .workout-banner-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--text);}
 .workout-banner-arrow{color:var(--sub);font-size:.9rem;}
 
-.quick-stats{display:flex;gap:8px;margin:4px 16px;overflow-x:auto;padding-bottom:5px;
--ms-overflow-style:none;
-scrollbar-width:none;
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 4px 16px;
 }
 .quick-stats::-webkit-scrollbar{display:none;}
-.stat-chip{flex:0 0 auto;min-width:105px;background:linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%), var(--card);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--border2);border-radius:12px;padding:12px 10px;text-align:center;transition:transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;box-shadow:var(--depth-shadow);}
+.diet-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 4px 16px;
+}
+.stat-chip {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%), var(--card);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 12px 6px;
+  text-align: center;
+  transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+  box-shadow: var(--depth-shadow);
+}
 .stat-chip:active{background:var(--bg3);transform:scale(.97);}
 .stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;margin-bottom:2px;}
 .stat-label{font-size:.56rem;text-transform:uppercase;letter-spacing:1px;color:var(--sub);font-weight:700;}
@@ -943,10 +962,23 @@ scrollbar-width:none;
 @keyframes drawChart{to{stroke-dashoffset:0;}}
 .empty-chart{height:140px;display:flex;align-items:center;justify-content:center;color:var(--sub2);font-size:.75rem;background:var(--bg3);border:1px dashed var(--border2);border-radius:12px;text-align:center;padding:0 20px;}
 
-.progress-stats{display:flex;gap:8px;margin:0 16px 12px;overflow-x:auto;padding-bottom:5px;-ms-overflow-style:none;scrollbar-width:none;}
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0 16px 12px;
+}
 .progress-stats::-webkit-scrollbar{display:none;}
 /* All cards in one line */
-.prog-stat{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;text-align:center;box-shadow:var(--depth-shadow);flex:0 0 auto;min-width:105px;}
+.prog-stat {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 12px 6px;
+  text-align: center;
+  box-shadow: var(--depth-shadow);
+  width: 100%;
+}
 .prog-stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;line-height:1;margin-bottom:2px;}
 .prog-stat-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--sub);font-weight:700;}
 

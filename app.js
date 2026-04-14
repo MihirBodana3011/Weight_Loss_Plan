@@ -896,37 +896,6 @@ function renderHome() {
     document.getElementById('page-home').innerHTML =
       notifAlert +
 
-      // Challenge Ring Card
-      '<div class="challenge-ring-card tilt-card ' + hudClass + '">' +
-      '<svg class="ring-svg" width="70" height="70" viewBox="0 0 72 72">' +
-      '<circle cx="36" cy="36" r="30" fill="none" stroke="#222" stroke-width="5"/>' +
-      '<circle cx="36" cy="36" r="30" fill="none" stroke="#ff6b1a" stroke-width="5"' +
-      ' stroke-dasharray="' + (2 * Math.PI * 30) + '" stroke-dashoffset="' + (2 * Math.PI * 30 * (1 - pct / 100)) + '"' +
-      ' transform="rotate(-90 36 36)"/>' +
-      '<text x="36" y="42" text-anchor="middle" fill="#fff" font-family="Bebas Neue" font-size="16">' + (isChallengeActive ? pct + '%' : '—') + '</text>' +
-      '</svg>' +
-      '<div class="ring-info">' +
-      (isChallengeActive ?
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-        '<div class="ring-day-num">DAY ' + dayNum + '</div>' +
-        '<span style="font-size:.55rem;font-weight:900;padding:3px 8px;border-radius:20px;background:' + wTypeColor + '22;color:' + wTypeColor + ';border:1px solid ' + wTypeColor + '44;letter-spacing:1px;">' + wTypeLabel + '</span>' +
-        '</div>' +
-        (streak > 1 ? '<div style="font-size:.6rem;color:var(--gold);letter-spacing:1px;margin:2px 0;">🔥 ' + streak + '-DAY STREAK</div>' : '<div class="ring-day-of">' + daysLeft + ' DAYS TO GO</div>') +
-        '<div class="ring-progress-bar"><div class="ring-progress-fill" style="width:' + pct + '%"></div></div>' +
-        '<div class="challenge-actions">' +
-        '<button class="challenge-btn restart-btn" onclick="event.stopPropagation();restartChallenge()">🔄 RESTART</button>' +
-        '<button class="challenge-btn reset-btn" onclick="event.stopPropagation();resetChallenge()">⚠️ RESET</button>' +
-        '</div>'
-        :
-        '<div class="ring-day-num" style="font-size:1.8rem;">CHALLENGE READY</div>' +
-        '<div class="ring-day-of">TAP BELOW TO START DAY 1</div>' +
-        '<div class="challenge-actions">' +
-        '<button class="challenge-btn start-btn" onclick="event.stopPropagation();startChallenge()">🚀 START CHALLENGE</button>' +
-        '</div>'
-      ) +
-      '</div>' +
-      '</div>' +
-
       // Quick Stats Chips
       '<div class="quick-stats">' +
       // Water chip — shows glasses
@@ -962,6 +931,7 @@ function renderHome() {
       '</div>' +
 
       weekStripHTML() +
+      renderDynamicDietStats() +
       '<div class="section">' +
       '<div class="sec-h"><div class="sec-h-title">⏰ TODAY\'S TIMELINE</div>' +
       '<div id="metabolic-status" style="font-size:0.6rem; color:var(--gold); letter-spacing:1.5px; margin-left:auto;">' + getMetabolicPhase() + '</div>' +
@@ -974,6 +944,44 @@ function renderHome() {
   }
 }
 
+
+function renderDynamicDietStats() {
+  var p = DB.profile();
+  var weights = DB.weights().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  var wt = weights.length ? weights[weights.length - 1].kg : parseFloat(p.weight) || 75;
+  var targetWt = parseFloat(p.targetWeight) || 70;
+  var ht = parseFloat(p.height) || 170;
+  var age = parseInt(p.age) || 25;
+  var gender = p.gender || 'male';
+
+  var bmr = (10 * wt) + (6.25 * ht) - (5 * age);
+  bmr = gender === 'male' ? (bmr + 5) : (bmr - 161);
+  var tdee = Math.round(bmr * 1.55); // Active
+
+  var dayD = todayDay();
+  var dm = (typeof DAILY_MACROS !== 'undefined') ? DAILY_MACROS[dayD] : null;
+  var intake = 0;
+  if (dm) {
+    ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'].forEach(function (id) {
+      if (dm[id]) intake += (dm[id].cal || 0);
+    });
+  }
+  
+  var targetCal = intake > 0 ? intake : (tdee - 500);
+  var deficit = tdee - targetCal;
+
+  var lossPerWeek = (deficit * 7) / 7700; // in kg
+  var weeksLeft = (wt > targetWt && lossPerWeek > 0) ? Math.ceil((wt - targetWt) / lossPerWeek) : 0;
+  var timelineStr = weeksLeft > 0 ? (weeksLeft + ' WKS') : 'GOAL';
+
+  var cards = '<div class="diet-stats-grid" style="margin-top:10px;">';
+  cards += '<div class="stat-chip tilt-card"><div class="stat-val" style="color:var(--fire)">' + tdee + '</div><div class="stat-label">🔥 TDEE</div></div>';
+  cards += '<div class="stat-chip tilt-card"><div class="stat-val" style="color:var(--red)">-' + deficit + '</div><div class="stat-label">🔻 DEFICIT</div></div>';
+  cards += '<div class="stat-chip tilt-card"><div class="stat-val" style="color:var(--gold)">' + targetCal + '</div><div class="stat-label">🍽️ INTAKE</div></div>';
+  cards += '<div class="stat-chip tilt-card"><div class="stat-val" style="color:var(--blue)">' + timelineStr + '</div><div class="stat-label">⏳ LOSS TIMELINE</div></div>';
+  cards += '</div>';
+  return cards;
+}
 
 function scheduleHTML() {
   var mealData = DB.getMeal(today());
@@ -1180,6 +1188,7 @@ function toggleItemStatus(id) {
   }
 
   updateHomeStats();
+  updateDietStats();
 }
 
 function toggleSkipStatus(id) {
@@ -1225,6 +1234,7 @@ function toggleSkipStatus(id) {
   }
 
   updateHomeStats();
+  updateDietStats();
 }
 
 function updateHomeStats() {
@@ -1253,6 +1263,77 @@ function updateHomeStats() {
     chips[4].querySelector('.stat-val').style.color = sColor;
     chips[4].querySelector('.stat-val').innerHTML = ms.supp + '<span style="font-size:.65rem;color:var(--sub)">/' + ms.totalSupp + '</span>';
   }
+}
+
+function updateDietStats() {
+  if (currentPage !== 'diet') return;
+  var d = today();
+  var mealData = DB.getMeal(d);
+  var totalCal = 0, totalPro = 0, totalCarb = 0, totalFat = 0;
+  var dayD = todayDay();
+  var dm = DAILY_MACROS[dayD] || {};
+  var mealConfigs = {
+    pregym: dm.pregym || MEAL_CONFIG['pregym'],
+    postworkout: dm.postworkout || MEAL_CONFIG['postworkout'],
+    lunch: dm.lunch || MEAL_CONFIG['lunch'],
+    dinner: dm.dinner || MEAL_CONFIG['dinner'],
+    supp_snack: dm.supp_snack || MEAL_CONFIG['supp_snack']
+  };
+
+  ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'].forEach(function(id) {
+    var c = mealConfigs[id];
+    if (c && mealData[id] === true) {
+      totalCal += c.cal || 0; totalPro += c.protein || 0; totalCarb += c.carbs || 0; totalFat += c.fat || 0;
+    }
+  });
+
+  var goals = { cal: 1350, protein: 120, carbs: 110, fat: 35 };
+  if (typeof DAILY_MACROS !== 'undefined' && DAILY_MACROS[dayD]) {
+    var dm = DAILY_MACROS[dayD];
+    var g = { cal: 0, protein: 0, carbs: 0, fat: 0 };
+    ['pregym', 'postworkout', 'lunch', 'dinner', 'supp_snack'].forEach(function (id) {
+      if (dm[id]) { g.cal+=(dm[id].cal||0); g.protein+=(dm[id].protein||0); g.carbs+=(dm[id].carbs||0); g.fat+=(dm[id].fat||0); }
+    });
+    if (g.cal > 0) goals = g;
+  }
+
+  var pctCal = Math.min((totalCal / goals.cal) * 100, 100) || 0;
+  var pctPro = Math.min((totalPro / goals.protein) * 100, 100) || 0;
+  var pctCarb = Math.min((totalCarb / goals.carbs) * 100, 100) || 0;
+  var pctFat = Math.min((totalFat / goals.fat) * 100, 100) || 0;
+
+  requestAnimationFrame(function() {
+    var items = document.querySelectorAll('.macro-item');
+    if (items.length >= 4) {
+      items[0].querySelector('.macro-item-val').innerHTML = totalCal + '<span> / ' + goals.cal + '</span>';
+      items[0].querySelector('.macro-item-top span:last-child').textContent = Math.round(pctCal) + '%';
+      items[0].querySelector('.macro-item-fill').style.width = pctCal + '%; background:var(--fire);';
+
+      items[1].querySelector('.macro-item-val').innerHTML = totalPro + '<span> / ' + goals.protein + 'g</span>';
+      items[1].querySelector('.macro-item-top span:last-child').textContent = Math.round(pctPro) + '%';
+      items[1].querySelector('.macro-item-fill').style.width = pctPro + '%; background:var(--gold);';
+
+      items[2].querySelector('.macro-item-val').innerHTML = totalCarb + '<span> / ' + goals.carbs + 'g</span>';
+      items[2].querySelector('.macro-item-top span:last-child').textContent = Math.round(pctCarb) + '%';
+      items[2].querySelector('.macro-item-fill').style.width = pctCarb + '%; background:var(--green);';
+
+      items[3].querySelector('.macro-item-val').innerHTML = totalFat + '<span> / ' + goals.fat + 'g</span>';
+      items[3].querySelector('.macro-item-top span:last-child').textContent = Math.round(pctFat) + '%';
+      items[3].querySelector('.macro-item-fill').style.width = pctFat + '%; background:var(--blue);';
+    }
+
+    var pageDiet = document.getElementById('page-diet');
+    if (pageDiet) {
+        var headers = pageDiet.querySelectorAll('span');
+        for (var i = 0; i < headers.length; i++) {
+            if (headers[i].textContent.includes('KCAL')) {
+                headers[i].style.color = totalCal > 0 ? 'var(--fire)' : 'var(--sub)';
+                headers[i].textContent = '🔥 ' + totalCal + ' KCAL';
+                break;
+            }
+        }
+    }
+  });
 }
 
 function quickWaterAdd() {
@@ -1698,6 +1779,8 @@ function renderDiet() {
         g.fat += (dm[id].fat || 0);
       }
     });
+
+    // Removed TDEE override so target purely represents daily foods
     if (g.cal > 0) goals = g;
   }
 
@@ -1977,11 +2060,7 @@ function renderProgress() {
   var lastWtObj = weights.length ? weights[weights.length - 1] : (prof.startWeight ? { kg: parseFloat(prof.startWeight) } : null);
   var firstWtObj = prof.startWeight ? { kg: parseFloat(prof.startWeight) } : (weights.length ? weights[0] : null);
 
-  var weightPred30 = NeuralCore.predictWeight(30) || '---';
-  var weightPred60 = NeuralCore.predictWeight(60) || '---';
-  var weightPred90 = NeuralCore.predictWeight(90) || '---';
-  var isPlat = NeuralCore.isPlateau();
-  var recIndex = NeuralCore.getRecoveryIndex();
+
 
   var onerms = DB.getAdvanced('exOnerms') || {};
   var best1rm = 0;
@@ -2018,10 +2097,9 @@ function renderProgress() {
     '</div>' +
     '</div>' +
 
-    // Total lost badge (moved between Weight Progress and Body Metrics)
-    (totalLost ? '<div style="margin:2px 16px 14px;padding:10px 16px;background:' + (parseFloat(totalLost) > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') + ';border:1px solid ' + totalLostColor + '44;border-radius:12px;display:flex;align-items:center;justify-content:space-between;">' +
+    // Total lost badge
+    (totalLost ? '<div style="margin:2px 16px 14px;padding:10px 16px;background:' + (parseFloat(totalLost) > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)') + ';border:1px solid ' + totalLostColor + '44;border-radius:12px;display:flex;align-items:center;justify-content:center;">' +
       '<span style="font-size:.85rem;font-weight:900;color:' + totalLostColor + ';letter-spacing:1px;">' + totalLostLabel + '</span>' +
-      '<span style="font-size:.6rem;color:var(--sub);">DAY ' + dayNum + ' / 90  •  ' + daysLeft + ' TO GO</span>' +
       '</div>' : '') +
 
     // 3. Body Metrics 16-card grid (BMI, Body Fat, etc.) - filled async
@@ -2030,38 +2108,7 @@ function renderProgress() {
     // 4. AI Insights + Cycle Intelligence + Advanced Metrics 7D + Predictive - filled async
     '<div id="ai-insights-container"></div>' +
 
-    // 5. Neural Predictions (60/90 day)
-    '<div class="section">' +
-    '<div class="sec-h"><div class="sec-h-title">🧠 NEURAL PREDICTIONS</div></div>' +
-    '<div class="tilt-card" style="margin:0 16px; padding:15px; background:rgba(255,107,26,0.05); border:1px dashed var(--fire); border-radius:14px;">' +
-    '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
-    '<div><div style="font-size:0.5rem; color:var(--sub)">60 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--fire);">' + weightPred60 + ' kg</div></div>' +
-    '<div><div style="font-size:0.5rem; color:var(--sub)">90 DAYS</div><div style="font-size:1.1rem; font-weight:700; color:var(--gold);">' + weightPred90 + ' kg</div></div>' +
-    '<div style="text-align:right;"><div style="font-size:0.5rem; color:var(--sub)">TREND</div><div style="font-size:1.1rem; font-weight:700; color:var(--green);">' + (isPlat ? 'STALL' : 'LOSS') + '</div></div>' +
-    '</div>' +
-    '<div style="font-size:0.6rem; color:var(--sub2); font-style:italic;">Predictions calculated via linear regression of past 14 days activity.</div>' +
-    '</div>' +
-    '</div>' +
 
-    // 6. Mini analytics cards (Recovery/Plateau/1RM/Forecast)
-    '<div class="analytics-grid">' +
-    '<div class="analytics-card tilt-card">' +
-    '<div class="an-label">RECOVERY READINESS</div>' +
-    '<div class="an-val" style="color:var(--green)">' + recIndex + '%</div>' +
-    '<div class="an-trend ' + (recIndex > 70 ? 'up' : 'down') + '">' + (recIndex > 70 ? '▲ OPTIMAL' : '▼ CAUTION') + '</div>' +
-    '</div>' +
-    '<div class="analytics-card tilt-card">' +
-    '<div class="an-label">PLATEAU STATUS</div>' +
-    '<div class="an-val" style="color:' + (isPlat ? 'var(--red)' : 'var(--blue)') + '">' + (isPlat ? 'DETECTED' : 'CLEAR') + '</div>' +
-    '<div class="an-trend">' + (isPlat ? 'SWITCH PROGRAM' : 'KEEP GRINDING') + '</div>' +
-    '</div>' +
-
-    '<div class="analytics-card tilt-card">' +
-    '<div class="an-label">FORECAST (30D)</div>' +
-    '<div class="an-val" style="color:var(--fire)">' + weightPred30 + ' <span style="font-size:0.6rem">KG</span></div>' +
-    '<div class="an-trend">A.I PREDICTION</div>' +
-    '</div>' +
-    '</div>' +
 
     // 7. Muscle Group Volume chart removed
 
@@ -2413,14 +2460,12 @@ function renderHealthMetrics(forcedH, forcedW, age, gender, context, projectionH
   // Render advanced insights with cycle analysis and predictive analytics
   var cycleAnalysisHtml = generateCycleAnalysisHtml();
   var advancedMetricsHtml = generateAdvancedMetricsHtml();
-  var predictiveHtml = generatePredictiveInsights();
 
   document.getElementById('ai-insights-container').innerHTML =
     (projectionHtml || '') +
     insightsHtml +
     cycleAnalysisHtml +
-    advancedMetricsHtml +
-    predictiveHtml;
+    advancedMetricsHtml;
   document.getElementById('adv-metrics').innerHTML = metricsHtml;
 }
 
@@ -2836,58 +2881,7 @@ function generateCycleAnalysisHtml() {
   return html;
 }
 
-function generatePredictiveInsights() {
-  var profile = DB.profile();
-  var weights = DB.weights();
-  var week7 = calculateAdvancedMetrics(7);
 
-  if (weights.length < 3 || !profile.targetWeight) {
-    return '<div style="padding:10px; font-size:0.7rem; color:var(--sub); text-align:center;">Log more data for predictive analytics...</div>';
-  }
-
-  var latest = weights[weights.length - 1].kg;
-  var current = latest;
-  var target = parseFloat(profile.targetWeight);
-  var weeklyRate = parseFloat(week7.weightTrend) || 0;
-
-  var html = '<div class="prediction-card" style="margin:20px 16px; padding:16px; background:linear-gradient(135deg, rgba(168,107,207,0.1), rgba(88,198,255,0.05)); border:1px solid rgba(168,107,207,0.2); border-radius:16px;">';
-
-  html += '<div style="font-size:0.8rem; font-weight:900; letter-spacing:2px; color:var(--purple); margin-bottom:12px; display:flex; align-items:center; gap:6px;">🔮 PREDICTIVE ANALYTICS</div>';
-
-  if (weeklyRate < -0.3) {
-    var weeksRemaining = Math.ceil((current - target) / Math.abs(weeklyRate));
-    var projDate = new Date();
-    projDate.setDate(projDate.getDate() + (weeksRemaining * 7));
-
-    html += '<div style="background:rgba(34,197,94,0.1); padding:12px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--green);">';
-    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">PROJECTED GOAL DATE</div>';
-    html += '<div style="font-size:1.1rem; font-weight:900; color:var(--green); margin-top:4px;">📅 ' + toLocalDate(projDate) + '</div>';
-    html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:4px;">At current rate: ' + Math.abs(weeklyRate).toFixed(2) + 'kg/week</div>';
-    html += '</div>';
-
-    html += '<div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; margin-bottom:10px; font-size:0.7rem;">';
-    html += '<strong>📊 Weight Loss Physics:</strong><br>';
-    html += 'Current: ' + current.toFixed(1) + 'kg | Target: ' + target + 'kg | Remaining: ' + (current - target).toFixed(1) + 'kg<br>';
-    html += 'Weekly rate: ' + Math.abs(weeklyRate).toFixed(2) + 'kg | ETA: ' + weeksRemaining + ' weeks';
-    html += '</div>';
-  } else if (weeklyRate > 0.3) {
-    html += '<div style="background:rgba(239,68,68,0.1); padding:12px; border-radius:10px; border-left:4px solid var(--red);">';
-    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">⚠️ GAINING WEIGHT</div>';
-    html += '<div style="font-size:0.9rem; color:var(--red); font-weight:900; margin-top:4px;">+' + weeklyRate.toFixed(2) + 'kg/week</div>';
-    html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:6px;">Action: Review calorie intake & meal timing. Increase activity level.</div>';
-    html += '</div>';
-  } else {
-    html += '<div style="background:rgba(168,107,207,0.1); padding:12px; border-radius:10px; border-left:4px solid var(--purple);">';
-    html += '<div style="font-size:0.65rem; color:var(--sub); font-weight:700;">🏔️ PLATEAU STATE</div>';
-    html += '<div style="font-size:0.9rem; color:var(--purple); font-weight:900; margin-top:4px;">Change: ' + Math.abs(weeklyRate).toFixed(2) + 'kg/week (stable)</div>';
-    html += '<div style="font-size:0.65rem; color:var(--sub); margin-top:6px;">Body recomposition in progress. Track body measurements & photos for better progress indication.</div>';
-    html += '</div>';
-  }
-
-  html += '</div>';
-
-  return html;
-}
 
 // ═══════════════════════════════════════════════
 // ADVANCED METRICS RENDERING
@@ -2965,34 +2959,6 @@ function setupSave() {
   });
   DB.addWeight(today(), weight);
   initApp();
-}
-
-function startChallenge() {
-  DB.setProfile({ startDate: today() });
-  updateTopBar();
-  syncProfileWithSW(); // tell SW challenge is now active
-  renderHome();
-  showToast('🔥 Day 1 started! Stay disciplined.');
-}
-
-function resetChallenge() {
-  if (confirm('⚠️ RESET CHALLENGE? This will clear your Day count. Your history remains.')) {
-    DB.setProfile({ startDate: null });
-    updateTopBar();
-    syncProfileWithSW(); // tell SW challenge is now inactive
-    renderHome();
-    showToast('Challenge Reset. Day count cleared.');
-  }
-}
-
-function restartChallenge() {
-  if (confirm('🔄 RESTART CHALLENGE? Start again at Day 1 (Today).')) {
-    DB.setProfile({ startDate: today() });
-    updateTopBar();
-    syncProfileWithSW(); // tell SW challenge restarted
-    renderHome();
-    showToast('Challenge Restarted! Day 1.');
-  }
 }
 
 function initApp() {

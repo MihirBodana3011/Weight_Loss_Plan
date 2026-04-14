@@ -35,7 +35,7 @@
       "groups": [
         {
           "name": "Warm-Up",
-          "icon": "\ud83d\udd25",
+          "icon": "🔥",
           "exercises": [
             {
               "id": "wu1",
@@ -62,7 +62,7 @@
         },
         {
           "name": "Back",
-          "icon": "\ud83c\udfaf",
+          "icon": "🎯",
           "exercises": [
             {
               "id": "b1",
@@ -105,7 +105,7 @@
         },
         {
           "name": "Biceps",
-          "icon": "\ud83d\udcaa",
+          "icon": "💪",
           "exercises": [
             {
               "id": "bi1",
@@ -141,7 +141,7 @@
         },
         {
           "name": "Forearms",
-          "icon": "\ud83e\udd1b",
+          "icon": "🤛",
           "exercises": [
             {
               "id": "f1",
@@ -161,7 +161,7 @@
         },
         {
           "name": "Cardio Finish",
-          "icon": "\ud83c\udfc3",
+          "icon": "🏃",
           "exercises": [
             {
               "id": "cardio_treadmill",
@@ -183,7 +183,7 @@
       "groups": [
         {
           "name": "Warm-Up",
-          "icon": "\ud83d\udd25",
+          "icon": "🔥",
           "exercises": [
             {
               "id": "wu1",
@@ -210,7 +210,7 @@
         },
         {
           "name": "Chest",
-          "icon": "\ud83c\udfaf",
+          "icon": "🎯",
           "exercises": [
             {
               "id": "ch1",
@@ -252,7 +252,7 @@
         },
         {
           "name": "Triceps",
-          "icon": "\ud83d\udcaa",
+          "icon": "💪",
           "exercises": [
             {
               "id": "tr1",
@@ -289,7 +289,7 @@
         },
         {
           "name": "Abs",
-          "icon": "\ud83d\udd32",
+          "icon": "🔲",
           "exercises": [
             {
               "id": "ab1",
@@ -337,7 +337,7 @@
         },
         {
           "name": "Cardio Finish",
-          "icon": "\ud83c\udfc3",
+          "icon": "🏃",
           "exercises": [
             {
               "id": "cardio_treadmill",
@@ -359,7 +359,7 @@
       "groups": [
         {
           "name": "Warm-Up",
-          "icon": "\ud83d\udd25",
+          "icon": "🔥",
           "exercises": [
             {
               "id": "wu1",
@@ -388,7 +388,7 @@
         },
         {
           "name": "Quads",
-          "icon": "\ud83e\uddb5",
+          "icon": "🦵",
           "exercises": [
             {
               "id": "q1",
@@ -439,7 +439,7 @@
         },
         {
           "name": "Hamstrings / Glutes",
-          "icon": "\ud83c\udf51",
+          "icon": "🍑",
           "exercises": [
             {
               "id": "h1",
@@ -470,7 +470,7 @@
         },
         {
           "name": "Calves",
-          "icon": "\ud83e\uddb6",
+          "icon": "🦶",
           "exercises": [
             {
               "id": "ca1",
@@ -494,7 +494,7 @@
         },
         {
           "name": "Shoulders",
-          "icon": "\ud83c\udfaf",
+          "icon": "🎯",
           "exercises": [
             {
               "id": "sh1",
@@ -524,7 +524,7 @@
         },
         {
           "name": "Cardio Finish",
-          "icon": "\ud83c\udfc3",
+          "icon": "🏃",
           "exercises": [
             {
               "id": "cardio_treadmill",
@@ -546,7 +546,7 @@
       "groups": [
         {
           "name": "Active Recovery",
-          "icon": "\ud83c\udf3f",
+          "icon": "🌿",
           "exercises": [
             {
               "id": "r1",
@@ -568,7 +568,7 @@
         },
         {
           "name": "Home Abs",
-          "icon": "\ud83d\udd32",
+          "icon": "🔲",
           "exercises": [
             {
               "id": "ra1",
@@ -596,7 +596,7 @@
         },
         {
           "name": "Home Legs",
-          "icon": "\ud83e\uddb5",
+          "icon": "🦵",
           "exercises": [
             {
               "id": "rl1",
@@ -626,102 +626,102 @@
   },
   "WEEKLY_MEALS": {
     "sun": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Cucumber Salad (1 small bowl) + Mix Dal (1 small bowl) + Buttermilk (2 glass) + Jeera Rice (2 small bowl)",
-      "dinner": "<strong>Dinner:</strong> Vegetable Oats (1 small bowl) + Falhari Grilled Paneer (1 small bowl)",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Banana + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Chana",
+      "lunch": "<strong>Lunch:</strong> Mix Dal 1.5 bowl + Mix Veg + 1 Roti + Chaas",
+      "dinner": "<strong>Dinner:</strong> Moong Dal Dalia 1 bowl",
+      "supp_snack": "30g Roasted Makhana",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     },
     "mon": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Arhar Dal Tadka (1 small bowl) + Cucumber Tomato Salad (1.5 small bowl) + Boiled White Rice (1 small bowl)",
-      "dinner": "<strong>Dinner:</strong> Rajma Daliya (1 small bowl) + Plain Curd (1 small bowl) + Tomato Mint Chutney",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Banana + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Chana",
+      "lunch": "<strong>Lunch:</strong> Mix Dal 1.5 bowl + 1 Multigrain Roti + Cucumber Salad + 1 bowl Dahi",
+      "dinner": "<strong>Dinner:</strong> Moong Dal Chilla 2 pcs + Mint Chutney",
+      "supp_snack": "30g Roasted Makhana",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     },
     "tue": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Carrot/Capsicum Salad (1 small bowl) + Okra/Bhindi Masala (1.5 small bowl) + Phulka Roti (1)",
-      "dinner": "<strong>Dinner:</strong> Green Salad (1 tbsp) + Vegetable Soya Pulao - Brown Rice (1 small bowl)",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Apple + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Peanuts",
+      "lunch": "<strong>Lunch:</strong> Rajma Curry 1.5 bowl + Jeera Rice 1 bowl + Salad",
+      "dinner": "<strong>Dinner:</strong> Soy Chunks Pulao 1.5 bowl + Cucumber Raita",
+      "supp_snack": "30g Roasted Chana",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     },
     "wed": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Cucumber Salad (1 small bowl) + Chola Masala (1.5 serving) + Jeera Rice (1 small bowl)",
-      "dinner": "<strong>Dinner:</strong> Cucumber Salad (1 small bowl) + Moong Dal Tadka (1 small bowl) + Phulka Roti (1)",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Banana + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Chana",
+      "lunch": "<strong>Lunch:</strong> Chola Masala 1.5 bowl + 1 Roti + Salad",
+      "dinner": "<strong>Dinner:</strong> Paneer Bhurji 50g + 1 Multigrain Roti",
+      "supp_snack": "30g Roasted Peanuts",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     },
     "thu": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Cucumber Salad (1 small bowl) + Khichdi With Soya Nuggets (1 large bowl) + Plain Curd (0.5 small bowl)",
-      "dinner": "<strong>Dinner:</strong> Vegetable Paneer Pulao (1 serving) + Green Salad (1 small bowl)",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Apple + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Peanuts",
+      "lunch": "<strong>Lunch:</strong> Masoor Dal Tadka 1.5 bowl + 1 Roti + Dahi",
+      "dinner": "<strong>Dinner:</strong> Besan Chilla 2 pcs + Green Chutney",
+      "supp_snack": "30g Roasted Makhana",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     },
     "fri": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Carrot Cucumber Salad (1 small bowl) + Phulka Roti (2) + Plain Curd (0.5 small bowl) + Mixed Vegetable Sabzi With Dry Peas (1 small bowl)",
-      "dinner": "<strong>Dinner:</strong> Cucumber Tomato Salad (1 large bowl) + Vegetable Daliya (1.5 serving)",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Banana + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Chana",
+      "lunch": "<strong>Lunch:</strong> Soya Chunks Sabzi + 1 Roti + Curd",
+      "dinner": "<strong>Dinner:</strong> Mix Dal Khichdi 1.5 bowl + Veg Raita",
+      "supp_snack": "30g Roasted Chana",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     },
     "sat": {
-      "pregym": "1 medium banana + black coffee (no sugar, no milk)",
-      "postworkout": "<strong>Post-Workout Recovery:</strong> 200ml warm low-fat milk + 30g roasted chana — cheap protein after gym.",
-      "lunch": "<strong>Lunch:</strong> Multigrain Phulka Roti (1) + Carrot Cucumber Salad (1 small bowl) + Green Dal (Moong) (1 small bowl)",
-      "dinner": "<strong>Dinner:</strong> Cucumber Carrot Salad (1 large bowl) + Mixed Dal Khichdi (1 serving) + Mix Veg Raita (1 serving)",
-      "supp_fatburner": "1 capsule with half banana — not on empty stomach",
-      "supp_jeera1": "Warm lemon drink with jeera/saunf/ajwain after wake-up",
-      "supp_centrum": "Centrum Men multivitamin with lunch",
-      "supp_tslim": "T-Slim tablet with lunch",
-      "supp_acv1": "1 tbsp ACV in warm water 90 min after lunch",
-      "supp_isab2": "1 tsp Isabgol in lukewarm water before dinner",
-      "supp_snack": "30g roasted chana or 20g makhana as evening snack",
-      "supp_gt": "1 cup plain green tea, no sugar"
+      "pregym": "1 Apple + Black Coffee",
+      "postworkout": "<strong>Post-Workout:</strong> 200ml Low-fat Milk + 30g Roasted Peanuts",
+      "lunch": "<strong>Lunch:</strong> Kala Chana Curry 1.5 bowl + 1 Roti + Salad",
+      "dinner": "<strong>Dinner:</strong> 50g Paneer stir-fry + Light Dal",
+      "supp_snack": "30g Roasted Peanuts",
+      "supp_fatburner": "1 capsule with fruit",
+      "supp_jeera1": "Warm lemon drink with jeera",
+      "supp_centrum": "Centrum Men multivitamin",
+      "supp_tslim": "T-Slim tablet",
+      "supp_acv1": "1 tbsp ACV",
+      "supp_isab2": "1 tsp Isabgol",
+      "supp_gt": "1 cup green tea"
     }
   },
   "MEAL_CONFIG": {
@@ -734,7 +734,7 @@
       "protein": 1,
       "carbs": 27,
       "fat": 0,
-      "note": "1 medium banana + black coffee (no sugar, no milk)"
+      "note": "1 Fruit (Banana/Apple) + Black Coffee (No Sugar)"
     },
     "postworkout": {
       "label": "Post-Workout Recovery",
@@ -745,7 +745,7 @@
       "protein": 12,
       "carbs": 10,
       "fat": 8,
-      "note": "200ml warm low-fat milk + 30g roasted chana"
+      "note": "200ml Low-fat Milk + Roasted Chana/Peanuts"
     },
     "lunch": {
       "label": "Main Lunch",
@@ -756,7 +756,7 @@
       "protein": 18,
       "carbs": 61,
       "fat": 9,
-      "note": "Mix of dal, rice, roti, vegetables + salad"
+      "note": "Main Meal: Dal / Rajma / Chole / Soy + Roti"
     },
     "dinner": {
       "label": "Dinner",
@@ -767,7 +767,7 @@
       "protein": 16,
       "carbs": 31,
       "fat": 7,
-      "note": "Balanced protein & carb evening meal"
+      "note": "Light Protein: Chilla / Dal / Paneer / Oats"
     },
     "supp_snack": {
       "label": "Office Break Snack",
@@ -778,58 +778,233 @@
       "protein": 7,
       "carbs": 18,
       "fat": 3,
-      "note": "30g roasted chana or 20g makhana"
+      "note": "Roasted Makhana / Peanuts / Chana"
     }
   },
   "DAILY_MACROS": {
-    "sun": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 430, "protein": 18, "carbs": 65, "fat": 8 },
-      "dinner": { "cal": 240, "protein": 16, "carbs": 28, "fat": 6 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
-    },
     "mon": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 410, "protein": 16, "carbs": 62, "fat": 8 },
-      "dinner": { "cal": 260, "protein": 14, "carbs": 35, "fat": 6 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 205,
+        "protein": 13,
+        "carbs": 28,
+        "fat": 5
+      },
+      "lunch": {
+        "cal": 340,
+        "protein": 16,
+        "carbs": 47,
+        "fat": 7
+      },
+      "dinner": {
+        "cal": 200,
+        "protein": 10,
+        "carbs": 25,
+        "fat": 5
+      },
+      "supp_snack": {
+        "cal": 105,
+        "protein": 3,
+        "carbs": 22,
+        "fat": 1
+      }
     },
     "tue": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 415, "protein": 14, "carbs": 60, "fat": 10 },
-      "dinner": { "cal": 255, "protein": 22, "carbs": 28, "fat": 8 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 260,
+        "protein": 15,
+        "carbs": 15,
+        "fat": 17
+      },
+      "lunch": {
+        "cal": 350,
+        "protein": 13,
+        "carbs": 60,
+        "fat": 5
+      },
+      "dinner": {
+        "cal": 300,
+        "protein": 17,
+        "carbs": 40,
+        "fat": 5
+      },
+      "supp_snack": {
+        "cal": 115,
+        "protein": 6,
+        "carbs": 18,
+        "fat": 2
+      }
     },
     "wed": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 420, "protein": 18, "carbs": 58, "fat": 10 },
-      "dinner": { "cal": 250, "protein": 16, "carbs": 32, "fat": 6 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 205,
+        "protein": 13,
+        "carbs": 28,
+        "fat": 5
+      },
+      "lunch": {
+        "cal": 320,
+        "protein": 13,
+        "carbs": 53,
+        "fat": 5
+      },
+      "dinner": {
+        "cal": 250,
+        "protein": 12,
+        "carbs": 22,
+        "fat": 11
+      },
+      "supp_snack": {
+        "cal": 170,
+        "protein": 8,
+        "carbs": 5,
+        "fat": 14
+      }
     },
     "thu": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 425, "protein": 24, "carbs": 52, "fat": 12 },
-      "dinner": { "cal": 245, "protein": 18, "carbs": 26, "fat": 8 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 260,
+        "protein": 15,
+        "carbs": 15,
+        "fat": 17
+      },
+      "lunch": {
+        "cal": 340,
+        "protein": 16,
+        "carbs": 47,
+        "fat": 7
+      },
+      "dinner": {
+        "cal": 220,
+        "protein": 10,
+        "carbs": 25,
+        "fat": 6
+      },
+      "supp_snack": {
+        "cal": 105,
+        "protein": 3,
+        "carbs": 22,
+        "fat": 1
+      }
     },
     "fri": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 430, "protein": 16, "carbs": 64, "fat": 10 },
-      "dinner": { "cal": 240, "protein": 12, "carbs": 32, "fat": 6 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 205,
+        "protein": 13,
+        "carbs": 28,
+        "fat": 5
+      },
+      "lunch": {
+        "cal": 385,
+        "protein": 32,
+        "carbs": 38,
+        "fat": 6
+      },
+      "dinner": {
+        "cal": 300,
+        "protein": 12,
+        "carbs": 45,
+        "fat": 4
+      },
+      "supp_snack": {
+        "cal": 115,
+        "protein": 6,
+        "carbs": 18,
+        "fat": 2
+      }
     },
     "sat": {
-      "pregym": { "cal": 105, "protein": 1, "carbs": 27, "fat": 0 },
-      "postworkout": { "cal": 175, "protein": 15, "carbs": 10, "fat": 8 },
-      "lunch": { "cal": 420, "protein": 17, "carbs": 60, "fat": 10 },
-      "dinner": { "cal": 255, "protein": 14, "carbs": 38, "fat": 6 },
-      "supp_snack": { "cal": 120, "protein": 7, "carbs": 18, "fat": 3 }
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 260,
+        "protein": 15,
+        "carbs": 15,
+        "fat": 17
+      },
+      "lunch": {
+        "cal": 320,
+        "protein": 15,
+        "carbs": 53,
+        "fat": 5
+      },
+      "dinner": {
+        "cal": 250,
+        "protein": 15,
+        "carbs": 20,
+        "fat": 12
+      },
+      "supp_snack": {
+        "cal": 170,
+        "protein": 8,
+        "carbs": 5,
+        "fat": 14
+      }
+    },
+    "sun": {
+      "pregym": {
+        "cal": 105,
+        "protein": 1,
+        "carbs": 27,
+        "fat": 0
+      },
+      "postworkout": {
+        "cal": 205,
+        "protein": 13,
+        "carbs": 28,
+        "fat": 5
+      },
+      "lunch": {
+        "cal": 410,
+        "protein": 15,
+        "carbs": 55,
+        "fat": 7
+      },
+      "dinner": {
+        "cal": 200,
+        "protein": 8,
+        "carbs": 35,
+        "fat": 2
+      },
+      "supp_snack": {
+        "cal": 105,
+        "protein": 3,
+        "carbs": 22,
+        "fat": 1
+      }
     }
   },
   "DAILY_TIMELINE": [
